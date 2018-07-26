@@ -46,6 +46,13 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 public class NSR {
+	protected String getOs() {
+		return "Android";
+	}
+
+	protected String getVersion() {
+		return "2.0";
+	}
 
 	protected static final String PREFS_NAME = "NSRSDK";
 	protected static final String TAG = "nsr";
@@ -301,14 +308,6 @@ public class NSR {
 
 	protected void clearWebView() {
 		this.activityWebView = null;
-	}
-
-	protected String getOs() {
-		return "Android";
-	}
-
-	protected String getVersion() {
-		return "2.0";
 	}
 
 	protected NSRSecurityDelegate getSecurityDelegate() {

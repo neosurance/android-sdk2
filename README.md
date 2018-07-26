@@ -15,17 +15,16 @@ To run the example project, clone the repo, and build it.
 NeosuranceSDK is available through [jitpack](https://jitpack.io/). To install
 it, simply add the following line to your project:
 
-
 1. Add it in your root **gradle** file at the end of repositories:
 
-    ```gradle
+	```gradle
 	allprojects {
 		repositories {
 			...
 			maven { url 'https://jitpack.io' }
 		}
 	}
-	```  
+	```
 
 2. Then add the dependency in your application **gradle** file
 
@@ -86,11 +85,11 @@ it, simply add the following line to your project:
 	
 	```xml
 	<style name="AppTheme.NSRWebView">
-        <item name="windowNoTitle">true</item>
-        <item name="windowActionBar">false</item>
-        <item name="android:windowFullscreen">false</item>
-        <item name="android:windowContentOverlay">@null</item>
-    </style>
+		<item name="windowNoTitle">true</item>
+		<item name="windowActionBar">false</item>
+		<item name="android:windowFullscreen">false</item>
+		<item name="android:windowContentOverlay">@null</item>
+	</style>
 	```
 
 ## Use
@@ -122,9 +121,8 @@ it, simply add the following line to your project:
 	```java
 	public interface NSRSecurityDelegate {
 		void secureRequest(Context ctx, String endpoint, JSONObject payload, JSONObject headers, NSRSecurityResponse completionHandler) throws Exception;
-}
-	``` 
-
+	}
+	```
 	It's *mandatory* that your **securityDelegate** implement the **default constructor**.
 	
 	Then use the ***setSecurityDelegate*** method
@@ -141,7 +139,7 @@ it, simply add the following line to your project:
 	public interface NSRWorkflowDelegate {
 		boolean executeLogin(Context ctx, String url);
 		JSONObject executePayment(Context ctx, JSONObject payment, String url);
-}
+	}
 	```
 	
 	It's *mandatory* that your ** workflowDelegate** implement the **default constructor**.
@@ -163,7 +161,7 @@ it, simply add the following line to your project:
 4. ### registerUser  
 	When the user is recognized by your application, register him in our *SDK* creating an **NSRUser** and using the **registerUser** method.  
 	The **NSRUser** has the following fields:
-	   
+	
 	**code**: the user code in your system (can be equals to the email)  
 	**email**: the email is the real primary key  
 	**firstname** *optional*  
@@ -214,8 +212,8 @@ it, simply add the following line to your project:
 	```java
 	NSR.getInstance(this).showUrl(params);
 	```
-	 or 
-	 
+	or
+	
 	```java
 	JSONObject params = new JSONObject();
 	params.put("privacy", true);
@@ -224,7 +222,7 @@ it, simply add the following line to your project:
 8. ### sendEvent *optional*
 	The application can send explicit events to the system with **sendEvent** method
 	
-	```java          
+	```java
 	JSONObject payload = new JSONObject();
 	payload.put("latitude", latitude);
 	payload.put("longitude", longitude);

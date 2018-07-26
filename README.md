@@ -124,6 +124,7 @@ it, simply add the following line to your project:
 		void secureRequest(Context ctx, String endpoint, JSONObject payload, JSONObject headers, NSRSecurityResponse completionHandler) throws Exception;
 }
 	``` 
+
 	It's *mandatory* that your **securityDelegate** implement the **default constructor**.
 	
 	Then use the ***setSecurityDelegate*** method
@@ -131,7 +132,6 @@ it, simply add the following line to your project:
 	```java
 	NSR.getInstance(this).setSecurityDelegate(<yourSecurityDelegate>);
 	```
-	
 	
 3. ### setWorkFlowDelegate *optional*  
 	If the purchase workflow must be interrupted in order to perform user login or to perform payment.  
@@ -142,7 +142,8 @@ it, simply add the following line to your project:
 		boolean executeLogin(Context ctx, String url);
 		JSONObject executePayment(Context ctx, JSONObject payment, String url);
 }
-	``` 
+	```
+	
 	It's *mandatory* that your ** workflowDelegate** implement the **default constructor**.
 	
 	Then use the ***setWorkflowDelegate*** method
@@ -150,6 +151,7 @@ it, simply add the following line to your project:
 	```java
 	NSR.getInstance(this).setWorkflowDelegate(<yourWorkflowDelegate>);
 	```
+	
 	when login or payment is performed you must call the methods **loginExecuted** and **paymentExecuted** to resume the workflow
 	
 	```java

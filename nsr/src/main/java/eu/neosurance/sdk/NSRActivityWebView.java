@@ -77,11 +77,14 @@ public class NSRActivityWebView extends AppCompatActivity {
 		}
 	}
 
-	protected void navigate(final String url) {
+	protected synchronized void navigate(final String url) {
 		new Handler(Looper.getMainLooper()).post(new Runnable() {
 			public void run() {
-				if (webView != null) {
-					webView.loadUrl(url);
+				try {
+					if (webView != null) {
+						webView.loadUrl(url);
+					}
+				} catch (Throwable e) {
 				}
 			}
 		});
@@ -90,8 +93,11 @@ public class NSRActivityWebView extends AppCompatActivity {
 	protected void eval(final String code) {
 		new Handler(Looper.getMainLooper()).post(new Runnable() {
 			public void run() {
-				if (webView != null) {
-					webView.evaluateJavascript(code, null);
+				try {
+					if (webView != null) {
+						webView.evaluateJavascript(code, null);
+					}
+				} catch (Throwable e) {
 				}
 			}
 		});
@@ -297,27 +303,36 @@ public class NSRActivityWebView extends AppCompatActivity {
 	private void idle() {
 		new Handler().postDelayed(new Runnable() {
 			public void run() {
-				if (webView != null) {
-					webView.evaluateJavascript("(function() { return (window.document.body.className.indexOf('NSR') == -1 ? false : true); })();", new ValueCallback<String>() {
-						public void onReceiveValue(String value) {
-							if ("true".equals(value)) {
-								idle();
-							} else {
-								finish();
+				try {
+					if (webView != null) {
+						webView.evaluateJavascript("(function() { return (window.document.body.className.indexOf('NSR') == -1 ? false : true); })();", new ValueCallback<String>() {
+							public void onReceiveValue(String value) {
+								if ("true".equals(value)) {
+									idle();
+								} else {
+									finish();
+								}
 							}
-						}
-					});
+						});
+					}
+				} catch (Throwable e) {
 				}
 			}
 		}, 15 * 1000);
 	}
 
-	public void finish() {
+	public synchronized void finish() {
 		nsr.clearWebView();
 		new Handler(Looper.getMainLooper()).post(new Runnable() {
 			public void run() {
-				webView.stopLoading();
-				webView.destroy();
+				try {
+					if (webView != null) {
+						webView.stopLoading();
+						webView.destroy();
+						webView = null;
+					}
+				} catch (Throwable e) {
+				}
 			}
 		});
 		super.finish();

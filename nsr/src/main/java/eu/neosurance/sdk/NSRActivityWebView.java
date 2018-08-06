@@ -186,13 +186,27 @@ public class NSRActivityWebView extends AppCompatActivity {
 					});
 				}
 				if (nsr.getWorkflowDelegate() != null && "executeLogin".equals(body.getString("what")) && body.has("callBack")) {
-					eval(body.getString("callBack") + "(" + nsr.getWorkflowDelegate().executeLogin(getApplicationContext(), webView.getUrl()) + ")");
+					new Handler(Looper.getMainLooper()).post(new Runnable() {
+						public void run() {
+							try {
+								eval(body.getString("callBack") + "(" + nsr.getWorkflowDelegate().executeLogin(getApplicationContext(), webView.getUrl()) + ")");
+							} catch (Throwable e) {
+							}
+						}
+					});
 				}
 				if (nsr.getWorkflowDelegate() != null && "executePayment".equals(body.getString("what")) && body.has("payment")) {
-					JSONObject paymentInfo = nsr.getWorkflowDelegate().executePayment(getApplicationContext(), body.getJSONObject("payment"), webView.getUrl());
-					if (body.has("callBack")) {
-						eval(body.getString("callBack") + "(" + (paymentInfo != null ? paymentInfo.toString() : "") + ")");
-					}
+					new Handler(Looper.getMainLooper()).post(new Runnable() {
+						public void run() {
+							try {
+								JSONObject paymentInfo = nsr.getWorkflowDelegate().executePayment(getApplicationContext(), body.getJSONObject("payment"), webView.getUrl());
+								if (body.has("callBack")) {
+									eval(body.getString("callBack") + "(" + (paymentInfo != null ? paymentInfo.toString() : "") + ")");
+								}
+							} catch (Throwable e) {
+							}
+						}
+					});
 				}
 			}
 		} catch (Exception e) {

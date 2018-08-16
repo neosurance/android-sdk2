@@ -18,7 +18,7 @@
 			android:layout_height="wrap_content"
 			android:layout_marginEnd="128dp"
 			android:layout_marginStart="128dp"
-			android:layout_marginTop="60dp"
+			android:layout_marginTop="30dp"
 			android:onClick="registerUser"
 			android:text="Register User"
 			app:layout_constraintEnd_toEndOf="parent"
@@ -41,7 +41,7 @@
 		<Button
 			android:id="@+id/policiesButton"
 			android:layout_width="200dp"
-			android:layout_height="48dp"
+			android:layout_height="wrap_content"
 			android:layout_marginEnd="128dp"
 			android:layout_marginStart="128dp"
 			android:layout_marginTop="30dp"
@@ -76,7 +76,32 @@
 			app:layout_constraintEnd_toEndOf="parent"
 			app:layout_constraintStart_toStartOf="parent"
 			app:layout_constraintTop_toBottomOf="@+id/sendEventButton" />
-	</android.support.constraint.ConstraintLayout>
 
+		<Button
+			android:id="@+id/appLoginButton"
+			android:layout_width="200dp"
+			android:layout_height="wrap_content"
+			android:layout_marginEnd="128dp"
+			android:layout_marginStart="128dp"
+			android:layout_marginTop="30dp"
+			android:onClick="appLogin"
+			android:text="App Login"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintTop_toBottomOf="@+id/setupButton" />
+
+		<Button
+			android:id="@+id/appPaymentButton"
+			android:layout_width="200dp"
+			android:layout_height="wrap_content"
+			android:layout_marginEnd="128dp"
+			android:layout_marginStart="128dp"
+			android:layout_marginTop="30dp"
+			android:onClick="appPayment"
+			android:text="App Payment"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintTop_toBottomOf="@+id/appLoginButton" />
+	</android.support.constraint.ConstraintLayout>
 
 </FrameLayout>

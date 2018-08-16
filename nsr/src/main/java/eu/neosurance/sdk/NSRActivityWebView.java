@@ -42,7 +42,6 @@ import java.util.List;
 public class NSRActivityWebView extends AppCompatActivity {
 	private WebView webView;
 	private String photoCallback;
-	private String url;
 	private NSR nsr;
 
 	protected void onCreate(Bundle savedInstanceState) {
@@ -51,7 +50,7 @@ public class NSRActivityWebView extends AppCompatActivity {
 		nsr.registerWebView(this);
 		setContentView(R.layout.nsr_activity_webview);
 		try {
-			url = getIntent().getExtras().getString("url");
+			String url = getIntent().getExtras().getString("url");
 			webView = (WebView) findViewById(R.id.webView);
 			webView.addJavascriptInterface(this, "NSSdk");
 			webView.getSettings().setJavaScriptEnabled(true);
@@ -79,7 +78,6 @@ public class NSRActivityWebView extends AppCompatActivity {
 	}
 
 	protected synchronized void navigate(final String url) {
-		this.url = url;
 		new Handler(Looper.getMainLooper()).post(new Runnable() {
 			public void run() {
 				try {
@@ -188,13 +186,27 @@ public class NSRActivityWebView extends AppCompatActivity {
 					});
 				}
 				if (nsr.getWorkflowDelegate() != null && "executeLogin".equals(body.getString("what")) && body.has("callBack")) {
-					eval(body.getString("callBack") + "(" + nsr.getWorkflowDelegate().executeLogin(getApplicationContext(), webView.getUrl()) + ")");
+					new Handler(Looper.getMainLooper()).post(new Runnable() {
+						public void run() {
+							try {
+								webView.evaluateJavascript(body.getString("callBack") + "(" + nsr.getWorkflowDelegate().executeLogin(getApplicationContext(), webView.getUrl()) + ")",null);
+							} catch (Throwable e) {
+							}
+						}
+					});
 				}
 				if (nsr.getWorkflowDelegate() != null && "executePayment".equals(body.getString("what")) && body.has("payment")) {
-					JSONObject paymentInfo = nsr.getWorkflowDelegate().executePayment(getApplicationContext(), body.getJSONObject("payment"), webView.getUrl());
-					if (body.has("callBack")) {
-						eval(body.getString("callBack") + "(" + (paymentInfo != null ? paymentInfo.toString() : "") + ")");
-					}
+					new Handler(Looper.getMainLooper()).post(new Runnable() {
+						public void run() {
+							try {
+								JSONObject paymentInfo = nsr.getWorkflowDelegate().executePayment(getApplicationContext(), body.getJSONObject("payment"), webView.getUrl());
+								if (body.has("callBack")) {
+									webView.evaluateJavascript(body.getString("callBack") + "(" + (paymentInfo != null ? paymentInfo.toString() : "") + ")",null);
+								}
+							} catch (Throwable e) {
+							}
+						}
+					});
 				}
 			}
 		} catch (Exception e) {

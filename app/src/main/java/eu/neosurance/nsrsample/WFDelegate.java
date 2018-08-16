@@ -1,18 +1,20 @@
 package eu.neosurance.nsrsample;
 
 import android.content.Context;
-
 import org.json.JSONObject;
-
 import eu.neosurance.sdk.NSRWorkflowDelegate;
 
 public class WFDelegate implements NSRWorkflowDelegate{
-	public boolean executeLogin(Context ctx, String url) {
 
-		return false;
+	public String url = null;
+
+	public boolean executeLogin(final Context ctx, final String url) {
+		this.url = url;
+		return true;
 	}
 
-	public JSONObject executePayment(Context ctx, JSONObject payment, String url) {
-		return null;
+	public JSONObject executePayment(final Context ctx, final JSONObject payment, final String url) {
+		this.url = url;
+		return  null;
 	}
 }

@@ -15,9 +15,11 @@ import org.json.JSONObject;
 import eu.neosurance.sdk.NSR;
 import eu.neosurance.sdk.NSRNotification;
 import eu.neosurance.sdk.NSRUser;
+import eu.neosurance.sdk.NSRWorkflowDelegate;
 
 public class MainActivity extends AppCompatActivity {
 	public final static String TAG = "NSRSample";
+	private WFDelegate workflowDelegate;
 
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -28,10 +30,11 @@ public class MainActivity extends AppCompatActivity {
 	public void registerUser(View v) {
 		Log.d(TAG, "registerUser");
 		NSRUser user = new NSRUser();
-		user.setEmail("tg@neosurance.eu");
-		user.setCode("tg@neosurance.eu");
-		user.setFirstname("gio");
-		user.setLastname("gio");
+		user.setEmail("sar@neosurance.eu");
+		user.setCode("sar@neosurance.eu");
+		user.setFirstname("Salvatore");
+		user.setLastname("Arena");
+		user.setFiscalCode("ABCDE");
 		NSR.getInstance(this).registerUser(user);
 	}
 
@@ -60,15 +63,40 @@ public class MainActivity extends AppCompatActivity {
 		Log.d(TAG, "setup");
 		try {
 			JSONObject settings = new JSONObject();
-			settings.put("base_url", "https://sandbox.neosurancecloud.net/sdk/api/v1.0/");
+			settings.put("base_url", "http://192.168.0.71:8080/sdk/api/v1.0/");
+			//settings.put("base_url", "http://sandbox.neosurancecloud.net/sdk/api/v1.0/");
 			settings.put("code", "ing");
 			settings.put("secret_key", "uBc4dyQeqp7miIAfis");
 			settings.put("push_icon", R.drawable.king);
 			settings.put("ask_permission", 1);
 			settings.put("dev_mode", 1);
+			workflowDelegate = new WFDelegate();
+			NSR.getInstance(this).setWorkflowDelegate(workflowDelegate);
 			NSR.getInstance(this).setup(settings);
 		} catch (JSONException e) {
 			Log.e(TAG, "setup", e);
+		}
+	}
+
+	public void appLogin(View v){
+		Log.d(TAG, "appLogin");
+		if(workflowDelegate.url != null){
+			NSR.getInstance(this).loginExecuted(workflowDelegate.url);
+			workflowDelegate.url = null;
+		}
+	}
+
+	public void appPayment(View v){
+		Log.d(TAG, "appPayment");
+		try{
+			if(workflowDelegate.url != null) {
+				JSONObject paymentInfo = new JSONObject();
+				paymentInfo.put("transactionCode", "abcde");
+				NSR.getInstance(this).paymentExecuted(paymentInfo, workflowDelegate.url);
+				workflowDelegate.url = null;
+			}
+		}catch(Exception e){
+			Log.e(TAG, "appPayment", e);
 		}
 	}
 }

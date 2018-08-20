@@ -547,8 +547,8 @@ public class NSR {
 							if (error == null) {
 								if (json.has("pushes")) {
 									boolean skipPush = !json.has("skipPush") || json.getBoolean("skipPush");
+									JSONArray pushes = json.getJSONArray("pushes");
 									if (!skipPush) {
-										JSONArray pushes = json.getJSONArray("pushes");
 										if (pushes.length() > 0) {
 											JSONObject notification = pushes.getJSONObject(0);
 											String imageUrl = notification.has("imageUrl") ? notification.getString("imageUrl") : null;
@@ -557,7 +557,6 @@ public class NSR {
 											NSRNotification.sendNotification(ctx, notification.getString("title"), notification.getString("body"), imageUrl, pendingIntent);
 										}
 									} else {
-										JSONArray pushes = json.getJSONArray("pushes");
 										if (pushes.length() > 0) {
 											JSONObject notification = pushes.getJSONObject(0);
 											Log.d(TAG, notification.toString());

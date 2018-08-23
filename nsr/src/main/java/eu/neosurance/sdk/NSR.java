@@ -64,6 +64,7 @@ public class NSR {
 	private static NSR instance = null;
 	private Context ctx = null;
 	private NSREventWebView eventWebView = null;
+	private long eventWebViewSynchTime = 0;
 
 	private NSRSecurityDelegate securityDelegate = null;
 	private NSRWorkflowDelegate workflowDelegate = null;
@@ -134,6 +135,7 @@ public class NSR {
 				if (eventWebView == null && conf.has("local_tracking") && conf.getBoolean("local_tracking")) {
 					Log.d(TAG, "Making NSREventWebView");
 					eventWebView = new NSREventWebView(ctx, this);
+					eventWebViewSynchTime = System.currentTimeMillis() / 1000;
 				}
 
 				int time = conf.getInt("time");
@@ -152,6 +154,14 @@ public class NSR {
 			}
 		} catch (Exception e) {
 			Log.e(TAG, "initJob", e);
+		}
+	}
+
+	private void synchEventWebView() {
+		long t = System.currentTimeMillis() / 1000;
+		if (eventWebView != null && t - eventWebViewSynchTime > (60 * 60 * 8)) {
+			eventWebView.synch();
+			eventWebViewSynchTime = t;
 		}
 	}
 
@@ -442,6 +452,9 @@ public class NSR {
 									Log.d(TAG, "authorize needsInitJob");
 									initJob();
 								}
+								if (conf.has("local_tracking") && conf.getBoolean("local_tracking")) {
+									synchEventWebView();
+								}
 								delegate.authorized(true);
 							} else {
 								delegate.authorized(false);
@@ -525,6 +538,10 @@ public class NSR {
 
 					JSONObject devicePayLoad = new JSONObject();
 					devicePayLoad.put("uid", getDeviceUid());
+					String pushToken = getPushToken();
+					if (pushToken != null) {
+						devicePayLoad.put("push_token", pushToken);
+					}
 					devicePayLoad.put("os", getOs());
 					devicePayLoad.put("version", Build.VERSION.RELEASE + " " + Build.VERSION_CODES.class.getFields()[android.os.Build.VERSION.SDK_INT].getName());
 					devicePayLoad.put("model", Build.MODEL);
@@ -550,11 +567,11 @@ public class NSR {
 									JSONArray pushes = json.getJSONArray("pushes");
 									if (!skipPush) {
 										if (pushes.length() > 0) {
-											JSONObject notification = pushes.getJSONObject(0);
-											String imageUrl = notification.has("imageUrl") ? notification.getString("imageUrl") : null;
-											String url = notification.has("url") ? notification.getString("url") : null;
+											JSONObject push = pushes.getJSONObject(0);
+											String imageUrl = push.has("imageUrl") ? push.getString("imageUrl") : null;
+											String url = push.has("url") ? push.getString("url") : null;
 											PendingIntent pendingIntent = (url != null && !"".equals(url)) ? PendingIntent.getActivity(ctx, (int) System.currentTimeMillis(), makeActivityWebView(url), PendingIntent.FLAG_UPDATE_CURRENT) : null;
-											NSRNotification.sendNotification(ctx, notification.getString("title"), notification.getString("body"), imageUrl, pendingIntent);
+											NSRNotification.sendNotification(ctx, push.getString("title"), push.getString("body"), imageUrl, pendingIntent);
 										}
 									} else {
 										if (pushes.length() > 0) {
@@ -664,6 +681,15 @@ public class NSR {
 			return getAuth().getString("token");
 		} catch (Exception e) {
 			Log.e(TAG, "getToken", e);
+			return null;
+		}
+	}
+
+	protected String getPushToken() {
+		try {
+			return getSettings().getString("push_token");
+		} catch (Exception e) {
+			Log.e(TAG, "getPushToken", e);
 			return null;
 		}
 	}

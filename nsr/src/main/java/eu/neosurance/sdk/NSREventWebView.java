@@ -1,5 +1,6 @@
 package eu.neosurance.sdk;
 
+import android.app.PendingIntent;
 import android.content.Context;
 import android.location.Address;
 import android.location.Geocoder;
@@ -76,21 +77,23 @@ public class NSREventWebView {
 				if ("init".equals(body.getString("what")) && body.has("callBack")) {
 					nsr.authorize(new NSRAuth() {
 						public void authorized(boolean authorized) throws Exception {
-							JSONObject settings = nsr.getSettings();
-							JSONObject message = new JSONObject();
-							message.put("api", settings.getString("base_url"));
-							message.put("token", nsr.getToken());
-							message.put("lang", nsr.getLang());
-							message.put("deviceUid", nsr.getDeviceUid());
-							eval(body.getString("callBack") + "(" + message.toString() + ")");
+							if(authorized) {
+								JSONObject message = new JSONObject();
+								message.put("api", nsr.getSettings().getString("base_url"));
+								message.put("token", nsr.getToken());
+								message.put("lang", nsr.getLang());
+								message.put("deviceUid", nsr.getDeviceUid());
+								eval(body.getString("callBack") + "(" + message.toString() + ")");
+							}
 						}
 					});
 				}
 				if ("token".equals(body.getString("what")) && body.has("callBack")) {
 					nsr.authorize(new NSRAuth() {
 						public void authorized(boolean authorized) throws Exception {
-							JSONObject settings = nsr.getSettings();
-							eval(body.getString("callBack") + "('" + nsr.getToken() + "')");
+							if(authorized) {
+								eval(body.getString("callBack") + "('" + nsr.getToken() + "')");
+							}
 						}
 					});
 				}
@@ -99,7 +102,9 @@ public class NSREventWebView {
 				}
 				if ("push".equals(body.getString("what")) && body.has("title") && body.has("body")) {
 					String imageUrl = body.has("imageUrl") ? body.getString("imageUrl") : null;
-					NSRNotification.sendNotification(ctx, body.getString("title"), body.getString("body"), imageUrl, null);
+					String url = body.has("url") ? body.getString("url") : null;
+					PendingIntent pendingIntent = (url != null && !"".equals(url)) ? PendingIntent.getActivity(ctx, (int) System.currentTimeMillis(), nsr.makeActivityWebView(url), PendingIntent.FLAG_UPDATE_CURRENT) : null;
+					NSRNotification.sendNotification(ctx, body.getString("title"), body.getString("body"), imageUrl, pendingIntent);
 				}
 				if ("geoCode".equals(body.getString("what")) && body.has("location") && body.has("callBack")) {
 					Geocoder geocoder = new Geocoder(ctx, Locale.forLanguageTag(nsr.getLang()));
@@ -114,6 +119,35 @@ public class NSREventWebView {
 						address.put("address", adrLine != null ? adrLine : "");
 						eval(body.getString("callBack") + "(" + address.toString() + ")");
 					}
+				}
+				if ("callApi".equals(body.getString("what")) && body.has("callBack")) {
+					nsr.authorize(new NSRAuth() {
+						public void authorized(boolean authorized) throws Exception {
+							if (!authorized) {
+								JSONObject result = new JSONObject();
+								result.put("status", "error");
+								result.put("message", "not authorized");
+								eval(body.getString("callBack") + "(" + result.toString() + ")");
+								return;
+							}
+							JSONObject headers = new JSONObject();
+							headers.put("ns_token", nsr.getToken());
+							headers.put("ns_lang", nsr.getLang());
+							nsr.getSecurityDelegate().secureRequest(ctx, body.getString("endpoint"), body.has("payload") ? body.getJSONObject("payload") : null, headers, new NSRSecurityResponse() {
+								public void completionHandler(JSONObject json, String error) throws Exception {
+									if (error == null) {
+										eval(body.getString("callBack") + "(" + json.toString() + ")");
+									} else {
+										Log.e(NSR.TAG, "secureRequest: " + error);
+										JSONObject result = new JSONObject();
+										result.put("status", "error");
+										result.put("message", error);
+										eval(body.getString("callBack") + "(" + result.toString() + ")");
+									}
+								}
+							});
+						}
+					});
 				}
 			}
 		} catch (Exception e) {

@@ -113,6 +113,9 @@ public class NSRActivityWebView extends AppCompatActivity {
 			if (body.has("event") && body.has("payload")) {
 				nsr.sendEvent(body.getString("event"), body.getJSONObject("payload"));
 			}
+			if (body.has("crunchEvent") && body.has("payload")) {
+				nsr.crunchEvent(body.getString("event"), body.getJSONObject("payload"));
+			}
 			if (body.has("action")) {
 				nsr.sendAction(body.getString("action"), body.getString("code"), body.getString("details"));
 			}

@@ -51,7 +51,7 @@ public class NSR {
 	}
 
 	protected String getVersion() {
-		return "2.0.1";
+		return "2.0.2";
 	}
 
 	protected static final String PREFS_NAME = "NSRSDK";

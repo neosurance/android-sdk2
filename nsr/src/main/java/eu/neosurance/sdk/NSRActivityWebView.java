@@ -48,10 +48,9 @@ public class NSRActivityWebView extends AppCompatActivity {
 		super.onCreate(savedInstanceState);
 		nsr = NSR.getInstance(getApplicationContext());
 		nsr.registerWebView(this);
-		setContentView(R.layout.nsr_activity_webview);
 		try {
 			String url = getIntent().getExtras().getString("url");
-			webView = findViewById(R.id.webView);
+			webView = new WebView(this);
 			webView.addJavascriptInterface(this, "NSSdk");
 			webView.getSettings().setJavaScriptEnabled(true);
 			webView.getSettings().setAllowFileAccessFromFileURLs(true);
@@ -70,6 +69,7 @@ public class NSRActivityWebView extends AppCompatActivity {
 					}
 				}
 			});
+			setContentView(webView);
 			webView.loadUrl(url);
 			idle();
 		} catch (Exception e) {

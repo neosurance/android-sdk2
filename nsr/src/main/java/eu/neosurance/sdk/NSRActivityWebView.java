@@ -51,7 +51,7 @@ public class NSRActivityWebView extends AppCompatActivity {
 		setContentView(R.layout.nsr_activity_webview);
 		try {
 			String url = getIntent().getExtras().getString("url");
-			webView = (WebView) findViewById(R.id.webView);
+			webView = findViewById(R.id.webView);
 			webView.addJavascriptInterface(this, "NSSdk");
 			webView.getSettings().setJavaScriptEnabled(true);
 			webView.getSettings().setAllowFileAccessFromFileURLs(true);

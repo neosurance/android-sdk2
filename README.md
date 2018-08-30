@@ -189,14 +189,14 @@ it, simply add the following line to your project:
 	If custom web views are needed the **showUrl** methods can be used
 	
 	```java
-	NSR.getInstance(this).showUrl(params);
+	NSR.getInstance(this).showUrl(url);
 	```
 	or
 	
 	```java
 	JSONObject params = new JSONObject();
 	params.put("privacy", true);
-	NSR.getInstance(this).showUrl(params);
+	NSR.getInstance(this).showUrl(url, params);
 	```
 8. ### sendEvent *optional*
 	The application can send explicit events to the system with **sendEvent** method

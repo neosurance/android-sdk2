@@ -49,9 +49,8 @@ public class NSR {
 	protected String getOs() {
 		return "Android";
 	}
-
 	protected String getVersion() {
-		return "2.0.2";
+		return "2.0.3";
 	}
 
 	protected static final String PREFS_NAME = "NSRSDK";

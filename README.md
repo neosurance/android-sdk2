@@ -31,7 +31,7 @@ it, simply add the following line to your project:
 	```gradle
 	dependencies {
 		...
-		implementation 'com.github.neosurance:android-sdk2:2.0'
+		implementation 'com.github.neosurance:android-sdk2:2.0.3'
 	}
 	```
 
@@ -50,7 +50,7 @@ it, simply add the following line to your project:
 	<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 	<uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION" />
 	```
-2. Inside your **AndroidManifest.xml** be sure to have the following activities, services and providers:
+2. Inside your **AndroidManifest.xml** be sure to have the following activity:
 
 	```xml
 	<activity
@@ -58,29 +58,8 @@ it, simply add the following line to your project:
 		android:configChanges="orientation|screenSize|keyboardHidden"
 		android:screenOrientation="portrait"
 		android:theme="@style/AppTheme.NSRWebView" />
-	<service
-		android:name="eu.neosurance.sdk.NSRJobService"
-		android:exported="false">
-		<intent-filter>
-			<action android:name="com.firebase.jobdispatcher.ACTION_EXECUTE" />
-		</intent-filter>
-	</service>
-	<service
-		android:name="eu.neosurance.sdk.NSRLocationIntent"
-		android:exported="false" />
-	<service
-		android:name="eu.neosurance.sdk.NSRActivityIntent"
-		android:exported="false" />
-	<provider
-		android:name="android.support.v4.content.FileProvider"
-		android:authorities="${applicationId}.provider"
-		android:exported="false"
-		android:grantUriPermissions="true">
-		<meta-data
-			android:name="android.support.FILE_PROVIDER_PATHS"
-			android:resource="@xml/file_paths" />
-	</provider>
 	```
+
 3. Inside your **values/styles.xml** be sure to have the following style:
 	
 	```xml

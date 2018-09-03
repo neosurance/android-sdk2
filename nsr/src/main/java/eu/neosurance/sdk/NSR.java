@@ -50,7 +50,7 @@ public class NSR {
 	}
 
 	protected String getVersion() {
-		return "2.0.6";
+		return "2.0.7";
 	}
 
 	protected static final String PREFS_NAME = "NSRSDK";
@@ -674,7 +674,7 @@ public class NSR {
 
 	protected String getToken() {
 		try {
-			return getSettings().has("token") ? getSettings().getString("token") : null;
+			return getAuth().has("token") ? getAuth().getString("token") : null;
 		} catch (Exception e) {
 			Log.e(TAG, "getToken", e);
 			return null;

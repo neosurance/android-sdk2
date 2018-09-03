@@ -622,7 +622,6 @@ public class NSR {
 				activityWebView.navigate(url);
 			} else {
 				ctx.startActivity(makeActivityWebView(url));
-				activityWebView.navigate(url);
 			}
 		} catch (Exception e) {
 			Log.e(TAG, "showUrl", e);

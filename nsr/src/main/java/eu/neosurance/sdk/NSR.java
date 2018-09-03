@@ -128,7 +128,6 @@ public class NSR {
 		try {
 			stopTraceActivity();
 			stopTraceLocation();
-			new FirebaseJobDispatcher(new GooglePlayDriver(ctx)).cancel(JOB_TAG);
 			JSONObject conf = getConf();
 			if (conf != null) {
 				if (eventWebView == null && conf.has("local_tracking") && conf.getBoolean("local_tracking")) {
@@ -149,7 +148,12 @@ public class NSR {
 					.setConstraints(Constraint.ON_ANY_NETWORK)
 					.setRetryStrategy(RetryStrategy.DEFAULT_LINEAR)
 					.build();
+				Log.d(TAG, "cancel job");
+				jobDispatcher.cancel(JOB_TAG);
+				Log.d(TAG, "mustSchedule job");
 				jobDispatcher.mustSchedule(myJob);
+			}else {
+				new FirebaseJobDispatcher(new GooglePlayDriver(ctx)).cancel(JOB_TAG);
 			}
 		} catch (Exception e) {
 			Log.e(TAG, "initJob", e);

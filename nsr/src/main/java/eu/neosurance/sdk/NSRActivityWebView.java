@@ -50,6 +50,7 @@ public class NSRActivityWebView extends AppCompatActivity {
 		nsr.registerWebView(this);
 		try {
 			String url = getIntent().getExtras().getString("url");
+			WebView.setWebContentsDebuggingEnabled(nsr.getSettings().getInt("dev_mode") != 0);
 			webView = new WebView(this);
 			webView.addJavascriptInterface(this, "NSSdk");
 			webView.getSettings().setJavaScriptEnabled(true);
@@ -120,7 +121,8 @@ public class NSRActivityWebView extends AppCompatActivity {
 				nsr.sendAction(body.getString("action"), body.getString("code"), body.getString("details"));
 			}
 			if (body.has("what")) {
-				if ("init".equals(body.getString("what")) && body.has("callBack")) {
+				String what = body.getString("what");
+				if ("init".equals(what) && body.has("callBack")) {
 					nsr.authorize(new NSRAuth() {
 						public void authorized(boolean authorized) throws Exception {
 							JSONObject settings = nsr.getSettings();
@@ -133,33 +135,33 @@ public class NSRActivityWebView extends AppCompatActivity {
 						}
 					});
 				}
-				if ("close".equals(body.getString("what"))) {
+				if ("close".equals(what)) {
 					finish();
 				}
-				if ("photo".equals(body.getString("what")) && body.has("callBack")) {
+				if ("photo".equals(what) && body.has("callBack")) {
 					takePhoto(body.getString("callBack"));
 				}
-				if ("location".equals(body.getString("what")) && body.has("callBack")) {
+				if ("location".equals(what) && body.has("callBack")) {
 					getLocation(body.getString("callBack"));
 				}
-				if ("user".equals(body.getString("what")) && body.has("callBack")) {
+				if ("user".equals(what) && body.has("callBack")) {
 					eval(body.getString("callBack") + "(" + nsr.getUser().toJsonObject(true).toString() + ")");
 				}
-				if ("showApp".equals(body.getString("what"))) {
+				if ("showApp".equals(what)) {
 					if (body.has("params")) {
 						nsr.showApp(body.getJSONObject("params"));
 					} else {
 						nsr.showApp();
 					}
 				}
-				if ("showUrl".equals(body.getString("what")) && body.has("url")) {
+				if ("showUrl".equals(what) && body.has("url")) {
 					if (body.has("params")) {
 						nsr.showUrl(body.getString("url"), body.getJSONObject("params"));
 					} else {
 						nsr.showUrl(body.getString("url"));
 					}
 				}
-				if ("callApi".equals(body.getString("what")) && body.has("callBack")) {
+				if ("callApi".equals(what) && body.has("callBack")) {
 					nsr.authorize(new NSRAuth() {
 						public void authorized(boolean authorized) throws Exception {
 							if (!authorized) {
@@ -188,7 +190,7 @@ public class NSRActivityWebView extends AppCompatActivity {
 						}
 					});
 				}
-				if (nsr.getWorkflowDelegate() != null && "executeLogin".equals(body.getString("what")) && body.has("callBack")) {
+				if (nsr.getWorkflowDelegate() != null && "executeLogin".equals(what) && body.has("callBack")) {
 					new Handler(Looper.getMainLooper()).post(new Runnable() {
 						public void run() {
 							try {
@@ -198,7 +200,7 @@ public class NSRActivityWebView extends AppCompatActivity {
 						}
 					});
 				}
-				if (nsr.getWorkflowDelegate() != null && "executePayment".equals(body.getString("what")) && body.has("payment")) {
+				if (nsr.getWorkflowDelegate() != null && "executePayment".equals(what) && body.has("payment")) {
 					new Handler(Looper.getMainLooper()).post(new Runnable() {
 						public void run() {
 							try {

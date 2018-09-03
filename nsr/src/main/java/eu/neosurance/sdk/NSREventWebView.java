@@ -25,6 +25,7 @@ public class NSREventWebView {
 		try {
 			this.ctx = ctx;
 			this.nsr = nsr;
+			WebView.setWebContentsDebuggingEnabled(nsr.getSettings().getInt("dev_mode") != 0);
 			webView = new WebView(ctx);
 			webView.addJavascriptInterface(this, "NSR");
 			webView.getSettings().setJavaScriptEnabled(true);
@@ -74,7 +75,8 @@ public class NSREventWebView {
 				nsr.sendAction(body.getString("action"), body.getString("code"), body.getString("details"));
 			}
 			if (body.has("what")) {
-				if ("init".equals(body.getString("what")) && body.has("callBack")) {
+				String what = body.getString("what");
+				if ("init".equals(what) && body.has("callBack")) {
 					nsr.authorize(new NSRAuth() {
 						public void authorized(boolean authorized) throws Exception {
 							if(authorized) {
@@ -88,7 +90,7 @@ public class NSREventWebView {
 						}
 					});
 				}
-				if ("token".equals(body.getString("what")) && body.has("callBack")) {
+				if ("token".equals(what) && body.has("callBack")) {
 					nsr.authorize(new NSRAuth() {
 						public void authorized(boolean authorized) throws Exception {
 							if(authorized) {
@@ -97,16 +99,16 @@ public class NSREventWebView {
 						}
 					});
 				}
-				if ("user".equals(body.getString("what")) && body.has("callBack")) {
+				if ("user".equals(what) && body.has("callBack")) {
 					eval(body.getString("callBack") + "(" + nsr.getUser().toJsonObject(true).toString() + ")");
 				}
-				if ("push".equals(body.getString("what")) && body.has("title") && body.has("body")) {
+				if ("push".equals(what) && body.has("title") && body.has("body")) {
 					String imageUrl = body.has("imageUrl") ? body.getString("imageUrl") : null;
 					String url = body.has("url") ? body.getString("url") : null;
 					PendingIntent pendingIntent = (url != null && !"".equals(url)) ? PendingIntent.getActivity(ctx, (int) System.currentTimeMillis(), nsr.makeActivityWebView(url), PendingIntent.FLAG_UPDATE_CURRENT) : null;
 					NSRNotification.sendNotification(ctx, body.getString("title"), body.getString("body"), imageUrl, pendingIntent);
 				}
-				if ("geoCode".equals(body.getString("what")) && body.has("location") && body.has("callBack")) {
+				if ("geoCode".equals(what) && body.has("location") && body.has("callBack")) {
 					Geocoder geocoder = new Geocoder(ctx, Locale.forLanguageTag(nsr.getLang()));
 					JSONObject location = body.getJSONObject("location");
 					List<Address> addresses = geocoder.getFromLocation(location.getDouble("latitude"), location.getDouble("longitude"), 1);
@@ -120,7 +122,7 @@ public class NSREventWebView {
 						eval(body.getString("callBack") + "(" + address.toString() + ")");
 					}
 				}
-				if ("callApi".equals(body.getString("what")) && body.has("callBack")) {
+				if ("callApi".equals(what) && body.has("callBack")) {
 					nsr.authorize(new NSRAuth() {
 						public void authorized(boolean authorized) throws Exception {
 							if (!authorized) {

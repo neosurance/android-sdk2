@@ -50,7 +50,7 @@ public class NSR {
 		return "Android";
 	}
 	protected String getVersion() {
-		return "2.0.3";
+		return "2.0.4";
 	}
 
 	protected static final String PREFS_NAME = "NSRSDK";
@@ -355,8 +355,6 @@ public class NSR {
 			if (!settings.has("dev_mode")) {
 				settings.put("dev_mode", 0);
 			}
-			WebView.setWebContentsDebuggingEnabled(settings.getInt("dev_mode") != 0);
-
 			if (!settings.has("push_icon")) {
 				settings.put("push_icon", R.drawable.nsr_logo);
 			}

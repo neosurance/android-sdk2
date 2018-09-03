@@ -13,11 +13,11 @@ import java.util.List;
 
 public class NSRActivityIntent extends IntentService {
 
-	protected NSRActivityIntent() {
+	public NSRActivityIntent() {
 		super("NSRActivityIntent");
 	}
 
-	protected void onHandleIntent(Intent intent) {
+	public void onHandleIntent(Intent intent) {
 		NSR nsr = NSR.getInstance(getApplicationContext());
 		if (ActivityRecognitionResult.hasResult(intent)) {
 			nsr.stopTraceActivity();

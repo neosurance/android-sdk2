@@ -176,7 +176,6 @@ public class NSR {
 		if (locationClient == null) {
 			Log.d(TAG, "initLocation");
 			locationClient = LocationServices.getFusedLocationProviderClient(ctx);
-			locationIntent = PendingIntent.getService(ctx, 0, new Intent(ctx, NSRLocationIntent.class), PendingIntent.FLAG_UPDATE_CURRENT);
 			locationRequest = LocationRequest.create();
 			locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 			locationRequest.setInterval(0);
@@ -194,6 +193,7 @@ public class NSR {
 					initLocation();
 					Log.d(TAG, "requestLocationUpdates");
 					stopTraceLocation();
+					locationIntent = PendingIntent.getService(ctx, 0, new Intent(ctx, NSRLocationIntent.class), PendingIntent.FLAG_UPDATE_CURRENT);
 					locationClient.requestLocationUpdates(locationRequest, locationIntent);
 				}
 			}
@@ -229,7 +229,6 @@ public class NSR {
 		if (activity == null) {
 			Log.d(TAG, "initActivity");
 			activity = ActivityRecognition.getClient(ctx);
-			activityIntent = PendingIntent.getService(ctx, 0, new Intent(ctx, NSRActivityIntent.class), PendingIntent.FLAG_UPDATE_CURRENT);
 		}
 	}
 
@@ -241,6 +240,7 @@ public class NSR {
 				initActivity();
 				Log.d(TAG, "requestActivityUpdates");
 				stopTraceActivity();
+				activityIntent = PendingIntent.getService(ctx, 0, new Intent(ctx, NSRActivityIntent.class), PendingIntent.FLAG_UPDATE_CURRENT);
 				activity.requestActivityUpdates(1000, activityIntent);
 			}
 		} catch (JSONException e) {

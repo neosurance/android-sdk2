@@ -11,7 +11,7 @@
 	<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 	<uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION" />
 
-	<!--application>
+	<application>
 		<service
 			android:name="eu.neosurance.sdk.NSRJobService"
 			android:exported="false">
@@ -35,5 +35,5 @@
 				android:name="android.support.FILE_PROVIDER_PATHS"
 				android:resource="@xml/file_paths" />
 		</provider>
-	</application-->
+	</application>
 </manifest>

@@ -17,7 +17,6 @@ import android.os.Build;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
-import android.webkit.WebView;
 
 import com.firebase.jobdispatcher.Constraint;
 import com.firebase.jobdispatcher.FirebaseJobDispatcher;
@@ -49,6 +48,7 @@ public class NSR {
 	protected String getOs() {
 		return "Android";
 	}
+
 	protected String getVersion() {
 		return "2.0.0";
 	}
@@ -674,7 +674,7 @@ public class NSR {
 
 	protected String getToken() {
 		try {
-			return getAuth().getString("token");
+			return getSettings().has("token") ? getSettings().getString("token") : null;
 		} catch (Exception e) {
 			Log.e(TAG, "getToken", e);
 			return null;
@@ -683,7 +683,7 @@ public class NSR {
 
 	protected String getPushToken() {
 		try {
-			return getSettings().getString("push_token");
+			return getSettings().has("push_token") ? getSettings().getString("push_token") : null;
 		} catch (Exception e) {
 			Log.e(TAG, "getPushToken", e);
 			return null;
@@ -692,7 +692,7 @@ public class NSR {
 
 	protected String getLang() {
 		try {
-			return getSettings().getString("ns_lang");
+			return getSettings().has("ns_lang") ? getSettings().getString("ns_lang") : null;
 		} catch (Exception e) {
 			Log.e(TAG, "getLang", e);
 			return null;

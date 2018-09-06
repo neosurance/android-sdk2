@@ -17,7 +17,8 @@ public class NSRActivityIntent extends IntentService {
 		super("NSRActivityIntent");
 	}
 
-	public void onHandleIntent(Intent intent) {
+	@Override
+	protected void onHandleIntent(Intent intent) {
 		NSR nsr = NSR.getInstance(getApplicationContext());
 		if (ActivityRecognitionResult.hasResult(intent)) {
 			nsr.stopTraceActivity();

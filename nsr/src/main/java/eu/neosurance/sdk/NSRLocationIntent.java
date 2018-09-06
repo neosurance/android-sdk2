@@ -15,7 +15,8 @@ public class NSRLocationIntent extends IntentService {
 		super("NSRLocationIntent");
 	}
 
-	public void onHandleIntent(Intent intent) {
+	@Override
+	protected void onHandleIntent(Intent intent) {
 		NSR nsr = NSR.getInstance(getApplicationContext());
 		if (LocationResult.hasResult(intent)) {
 			nsr.stopTraceLocation();

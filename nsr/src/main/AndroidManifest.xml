@@ -20,9 +20,6 @@
 			</intent-filter>
 		</service>
 		<service
-			android:name="eu.neosurance.sdk.NSRLocationIntent"
-			android:exported="false" />
-		<service
 			android:name="eu.neosurance.sdk.NSRActivityIntent"
 			android:exported="false" />
 

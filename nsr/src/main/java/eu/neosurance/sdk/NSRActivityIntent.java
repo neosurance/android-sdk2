@@ -9,7 +9,8 @@ import com.google.android.gms.location.DetectedActivity;
 
 import org.json.JSONObject;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class NSRActivityIntent extends IntentService {
 
@@ -18,43 +19,43 @@ public class NSRActivityIntent extends IntentService {
 	}
 
 	@Override
-	protected void onHandleIntent(Intent intent) {
+	public void onHandleIntent(Intent intent) {
+		Log.d(NSR.TAG, "NSRActivityIntent");
 		NSR nsr = NSR.getInstance(getApplicationContext());
+		JSONObject conf = nsr.getConf();
+		if (conf == null)
+			return;
 		if (ActivityRecognitionResult.hasResult(intent)) {
 			nsr.stopTraceActivity();
+			Map<String, Integer> confidences = new HashMap();
+			Map<String, Integer> counts = new HashMap();
 			String candidate = null;
 			int maxConfidence = 0;
 			try {
-				List<DetectedActivity> pas = ActivityRecognitionResult.extractResult(intent).getProbableActivities();
-				for (DetectedActivity da : pas) {
-					String type = null;
-					switch (da.getType()) {
-						case DetectedActivity.IN_VEHICLE:
-							type = "car";
-							break;
-						case DetectedActivity.ON_BICYCLE:
-							type = "bicycle";
-							break;
-						case DetectedActivity.WALKING:
-						case DetectedActivity.ON_FOOT:
-							type = "walking";
-							break;
-						case DetectedActivity.RUNNING:
-							type = "run";
-							break;
-						case DetectedActivity.STILL:
-							type = "still";
-							break;
-					}
-					Log.d(NSR.TAG, "activity: " + type + " - " + da.getConfidence());
-
-					if (type != null && (da.getConfidence() > maxConfidence)) {
-						candidate = type;
-						maxConfidence = da.getConfidence();
+				for (DetectedActivity activity : ActivityRecognitionResult.extractResult(intent).getProbableActivities()) {
+					Log.d(NSR.TAG, "activity: " + activityType(activity) + " - " + activity.getConfidence());
+					String type = activityType(activity);
+					if (type != null) {
+						int confidence = (confidences.get(type) != null ? confidences.get(type).intValue() : 0) + activity.getConfidence();
+						confidences.put(type, confidence);
+						int count = (counts.get(type) != null ? counts.get(type).intValue() : 0) + 1;
+						counts.put(type, count);
+						int weightedConfidence = confidence / count + (count * 5);
+						if (weightedConfidence > maxConfidence) {
+							candidate = type;
+							maxConfidence = weightedConfidence;
+						}
 					}
 				}
-
-				if (candidate != null && !candidate.equals(nsr.getLastActivity()) && maxConfidence >= nsr.getConf().getJSONObject("activity").getInt("confidence")) {
+				if (maxConfidence > 100) {
+					maxConfidence = 100;
+				}
+				int minConfidene = conf.getJSONObject("activity").getInt("confidence");
+				Log.d(NSR.TAG, "candidate: " + candidate);
+				Log.d(NSR.TAG, "maxConfidence: " + maxConfidence);
+				Log.d(NSR.TAG, "minConfidene: " + minConfidene);
+				Log.d(NSR.TAG, "lastActivity: " + nsr.getLastActivity());
+				if (candidate != null && !candidate.equals(nsr.getLastActivity()) && maxConfidence >= minConfidene) {
 					JSONObject payload = new JSONObject();
 					payload.put("type", candidate);
 					payload.put("confidence", maxConfidence);
@@ -68,5 +69,22 @@ public class NSRActivityIntent extends IntentService {
 		} else {
 			Log.d(NSR.TAG, "NSRActivityIntent: no result");
 		}
+	}
+
+	private String activityType(DetectedActivity activity) {
+		switch (activity.getType()) {
+			case DetectedActivity.STILL:
+				return "still";
+			case DetectedActivity.WALKING:
+			case DetectedActivity.ON_FOOT:
+				return "walk";
+			case DetectedActivity.RUNNING:
+				return "run";
+			case DetectedActivity.ON_BICYCLE:
+				return "bicycle";
+			case DetectedActivity.IN_VEHICLE:
+				return "car";
+		}
+		return null;
 	}
 }

@@ -28,6 +28,7 @@ import com.firebase.jobdispatcher.Trigger;
 import com.google.android.gms.location.ActivityRecognition;
 import com.google.android.gms.location.ActivityRecognitionClient;
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
@@ -50,7 +51,7 @@ public class NSR {
 	}
 
 	protected String getVersion() {
-		return "2.0.12";
+		return "2.0.13";
 	}
 
 	protected static final String PREFS_NAME = "NSRSDK";
@@ -72,7 +73,7 @@ public class NSR {
 	private Location lastLocation = null;
 	private FusedLocationProviderClient locationClient = null;
 	private LocationRequest locationRequest;
-	private PendingIntent locationIntent = null;
+	private LocationCallback locationCallback = null;
 
 	private String lastActivity = null;
 	private ActivityRecognitionClient activity = null;
@@ -133,7 +134,6 @@ public class NSR {
 				if (eventWebView == null && conf.has("local_tracking") && conf.getBoolean("local_tracking")) {
 					Log.d(TAG, "Making NSREventWebView");
 					eventWebView = new NSREventWebView(ctx, this);
-					eventWebViewSynchTime = System.currentTimeMillis() / 1000;
 				}
 
 				int time = conf.getInt("time");
@@ -152,7 +152,7 @@ public class NSR {
 				jobDispatcher.cancel(JOB_TAG);
 				Log.d(TAG, "mustSchedule job");
 				jobDispatcher.mustSchedule(myJob);
-			}else {
+			} else {
 				new FirebaseJobDispatcher(new GooglePlayDriver(ctx)).cancel(JOB_TAG);
 			}
 		} catch (Exception e) {
@@ -164,15 +164,18 @@ public class NSR {
 		long t = System.currentTimeMillis() / 1000;
 		if (eventWebView != null && t - eventWebViewSynchTime > (60 * 60 * 8)) {
 			eventWebView.synch();
-			eventWebViewSynchTime = t;
 		}
+	}
+
+	protected void eventWebViewSynched(){
+		eventWebViewSynchTime = System.currentTimeMillis() / 1000;
 	}
 
 	private boolean needsInitJob(JSONObject conf, JSONObject oldConf) throws Exception {
 		return (oldConf == null) || (conf.getInt("time") != oldConf.getInt("time")) || (eventWebView == null && conf.has("local_tracking") && conf.getBoolean("local_tracking"));
 	}
 
-	private void initLocation() {
+	private synchronized void initLocation() {
 		if (locationClient == null) {
 			Log.d(TAG, "initLocation");
 			locationClient = LocationServices.getFusedLocationProviderClient(ctx);
@@ -184,7 +187,7 @@ public class NSR {
 		}
 	}
 
-	protected void traceLocation() {
+	protected synchronized void traceLocation() {
 		Log.d(TAG, "traceLocation");
 		try {
 			if ((ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) && (ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED)) {
@@ -193,8 +196,8 @@ public class NSR {
 					initLocation();
 					Log.d(TAG, "requestLocationUpdates");
 					stopTraceLocation();
-					locationIntent = PendingIntent.getService(ctx, 0, new Intent(ctx, NSRLocationIntent.class), PendingIntent.FLAG_UPDATE_CURRENT);
-					locationClient.requestLocationUpdates(locationRequest, locationIntent);
+					locationCallback = new NSRLocationCallback(this);
+					locationClient.requestLocationUpdates(locationRequest, locationCallback, null);
 				}
 			}
 		} catch (JSONException e) {
@@ -202,10 +205,11 @@ public class NSR {
 		}
 	}
 
-	protected void stopTraceLocation() {
-		if (locationClient != null) {
+	protected synchronized void stopTraceLocation() {
+		if (locationClient != null && locationCallback != null) {
 			Log.d(TAG, "stopTraceLocation");
-			locationClient.removeLocationUpdates(locationIntent);
+			locationClient.removeLocationUpdates(locationCallback);
+			locationCallback = null;
 		}
 	}
 
@@ -225,14 +229,14 @@ public class NSR {
 		this.stillLocation = stillLocation;
 	}
 
-	private void initActivity() {
+	private synchronized void initActivity() {
 		if (activity == null) {
 			Log.d(TAG, "initActivity");
 			activity = ActivityRecognition.getClient(ctx);
 		}
 	}
 
-	protected void traceActivity() {
+	protected synchronized void traceActivity() {
 		Log.d(TAG, "traceActivity");
 		try {
 			JSONObject conf = getConf();
@@ -248,10 +252,11 @@ public class NSR {
 		}
 	}
 
-	protected void stopTraceActivity() {
-		if (activity != null) {
+	protected synchronized void stopTraceActivity() {
+		if (activity != null && activityIntent != null) {
 			Log.d(TAG, "stopTraceActivity");
 			activity.removeActivityUpdates(activityIntent);
+			activityIntent = null;
 		}
 	}
 

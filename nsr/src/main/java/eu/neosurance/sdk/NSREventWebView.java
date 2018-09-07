@@ -76,6 +76,9 @@ public class NSREventWebView {
 			}
 			if (body.has("what")) {
 				String what = body.getString("what");
+				if ("synched".equals(what)) {
+					nsr.eventWebViewSynched();
+				}
 				if ("init".equals(what) && body.has("callBack")) {
 					nsr.authorize(new NSRAuth() {
 						public void authorized(boolean authorized) throws Exception {
@@ -109,7 +112,10 @@ public class NSREventWebView {
 					NSRNotification.sendNotification(ctx, body.getString("title"), body.getString("body"), imageUrl, pendingIntent);
 				}
 				if ("geoCode".equals(what) && body.has("location") && body.has("callBack")) {
-					Geocoder geocoder = new Geocoder(ctx, Locale.forLanguageTag(nsr.getLang()));
+					Geocoder geocoder = null;
+					if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+						geocoder = new Geocoder(ctx, Locale.forLanguageTag(nsr.getLang()));
+					}
 					JSONObject location = body.getJSONObject("location");
 					List<Address> addresses = geocoder.getFromLocation(location.getDouble("latitude"), location.getDouble("longitude"), 1);
 					if (addresses != null && addresses.size() > 0) {

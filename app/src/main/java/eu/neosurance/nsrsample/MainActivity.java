@@ -64,8 +64,8 @@ public class MainActivity extends AppCompatActivity {
 		try {
 			JSONObject settings = new JSONObject();
 			settings.put("base_url", "https://sandbox.neosurancecloud.net/sdk/api/v1.0/");
-			settings.put("code", "ing");
-			settings.put("secret_key", "uBc4dyQeqp7miIAfis");
+			settings.put("code", "bikevo");
+			settings.put("secret_key", "uIMM9gQ5e1BDaUKtLP");
 			settings.put("push_icon", R.drawable.king);
 			settings.put("ask_permission", 1);
 			settings.put("dev_mode", 1);
@@ -98,4 +98,10 @@ public class MainActivity extends AppCompatActivity {
 			Log.e(TAG, "appPayment", e);
 		}
 	}
+
+	public void timeline(View v){
+		Log.d(TAG, "timeline");
+		NSR.getInstance(this).showUrl("https://s3.eu-west-2.amazonaws.com/neosurancesandbox/apps/timeline/app.html");
+	}
+
 }

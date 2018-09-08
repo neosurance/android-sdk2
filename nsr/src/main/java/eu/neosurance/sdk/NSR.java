@@ -46,12 +46,12 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 public class NSR {
-	protected String getOs() {
-		return "Android";
+	protected String getVersion() {
+		return "2.0.14";
 	}
 
-	protected String getVersion() {
-		return "2.0.13";
+	protected String getOs() {
+		return "Android";
 	}
 
 	protected static final String PREFS_NAME = "NSRSDK";
@@ -136,23 +136,23 @@ public class NSR {
 					eventWebView = new NSREventWebView(ctx, this);
 				}
 
+				traceAll();
 				int time = conf.getInt("time");
 				FirebaseJobDispatcher jobDispatcher = new FirebaseJobDispatcher(new GooglePlayDriver(ctx));
 				Job myJob = jobDispatcher.newJobBuilder()
 					.setService(NSRJobService.class)
 					.setTag(JOB_TAG)
 					.setRecurring(true)
-					.setTrigger(Trigger.executionWindow(time / 2, time))
+					.setTrigger(Trigger.executionWindow(time / 3, time))
 					.setLifetime(Lifetime.FOREVER)
 					.setReplaceCurrent(true)
 					.setConstraints(Constraint.ON_ANY_NETWORK)
 					.setRetryStrategy(RetryStrategy.DEFAULT_LINEAR)
 					.build();
-				Log.d(TAG, "cancel job");
-				jobDispatcher.cancel(JOB_TAG);
-				Log.d(TAG, "mustSchedule job");
+				Log.d(TAG, "mustSchedule job " + time);
 				jobDispatcher.mustSchedule(myJob);
 			} else {
+				Log.d(TAG, "cancel job");
 				new FirebaseJobDispatcher(new GooglePlayDriver(ctx)).cancel(JOB_TAG);
 			}
 		} catch (Exception e) {
@@ -316,6 +316,13 @@ public class NSR {
 		} catch (Exception e) {
 			Log.e(NSR.TAG, "traceConnection", e);
 		}
+	}
+
+	protected void traceAll() {
+		traceLocation();
+		traceActivity();
+		tracePower();
+		traceConnection();
 	}
 
 	protected void registerWebView(NSRActivityWebView activityWebView) {

@@ -170,7 +170,7 @@ it, simply add the following line to your project:
 	Note that without user no tracking will be performed.
 	
 	```java
-	NSR.getInstance(this). forgetUser();
+	NSR.getInstance(this).forgetUser();
 	```
 6. ### showApp *optional*
 	Is possible to show the list of the purchased policies (*communityApp*) using the **showApp** methods

@@ -21,24 +21,18 @@ import java.io.File;
 import cz.msebera.android.httpclient.Header;
 
 public class NSRNotification {
-	private static final String CHANNEL_ID = "NSR_CH_ID";
+	private static final String CHANNEL_ID = "NSRNotification";
 	private static boolean channelcreated = false;
 
 	public static void sendNotification(final Context ctx, final String title, final String body, final String imageUrl, final PendingIntent pendingIntent) {
 		if (NSR.gracefulDegradate()) {
 			return;
 		}
-		if (!channelcreated && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+		if (!channelcreated && Build.VERSION.SDK_INT >= 26) {
 			channelcreated = true;
-			NotificationChannel channel = new NotificationChannel(CHANNEL_ID, NSR.TAG, NotificationManager.IMPORTANCE_HIGH);
-			channel.setDescription(NSR.TAG);
-
-			channel.setSound(Uri.parse("android.resource://" + ctx.getPackageName() + "/" + R.raw.push), new AudioAttributes.Builder()
-				.setUsage(AudioAttributes.USAGE_NOTIFICATION)
-				.setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-				.build());
-
-			NotificationManager notificationManager = (NotificationManager) (ctx).getSystemService(Context.NOTIFICATION_SERVICE);
+			NotificationChannel channel = new NotificationChannel(CHANNEL_ID, CHANNEL_ID, NotificationManager.IMPORTANCE_HIGH);
+			channel.setSound(Uri.parse("android.resource://" + ctx.getPackageName() + "/" + R.raw.push), new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION).build());
+			NotificationManager notificationManager = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
 			notificationManager.createNotificationChannel(channel);
 		}
 		if (imageUrl != null) {
@@ -60,8 +54,7 @@ public class NSRNotification {
 	}
 
 	private static void showNotification(Context ctx, String title, String body, Bitmap image, PendingIntent pendingIntent) {
-		NotificationCompat.Builder notification = null;
-		notification = new NotificationCompat.Builder(ctx, CHANNEL_ID);
+		NotificationCompat.Builder notification = new NotificationCompat.Builder(ctx, CHANNEL_ID);
 		notification.setSound(Uri.parse("android.resource://" + ctx.getPackageName() + "/" + R.raw.push));
 		try {
 			notification.setSmallIcon(NSR.getInstance(ctx).getSettings().getInt("push_icon"));

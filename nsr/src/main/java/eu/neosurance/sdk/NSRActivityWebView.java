@@ -42,6 +42,7 @@ import java.util.List;
 public class NSRActivityWebView extends AppCompatActivity {
 	private WebView webView;
 	private String photoCallback;
+	private FusedLocationProviderClient locationClient = null;
 	private NSR nsr;
 
 	protected void onCreate(Bundle savedInstanceState) {
@@ -50,7 +51,7 @@ public class NSRActivityWebView extends AppCompatActivity {
 		nsr.registerWebView(this);
 		try {
 			String url = getIntent().getExtras().getString("url");
-			WebView.setWebContentsDebuggingEnabled(nsr.getSettings().getInt("dev_mode") != 0);
+			WebView.setWebContentsDebuggingEnabled(NSR.getBoolean(nsr.getSettings(),"dev_mode"));
 			webView = new WebView(this);
 			webView.addJavascriptInterface(this, "NSSdk");
 			webView.getSettings().setJavaScriptEnabled(true);
@@ -115,7 +116,10 @@ public class NSRActivityWebView extends AppCompatActivity {
 				nsr.sendEvent(body.getString("event"), body.getJSONObject("payload"));
 			}
 			if (body.has("crunchEvent") && body.has("payload")) {
-				nsr.crunchEvent(body.getString("event"), body.getJSONObject("payload"));
+				nsr.crunchEvent(body.getString("crunchEvent"), body.getJSONObject("payload"));
+			}
+			if (body.has("archiveEvent") && body.has("payload")) {
+				nsr.archiveEvent(body.getString("archiveEvent"), body.getJSONObject("payload"));
 			}
 			if (body.has("action")) {
 				nsr.sendAction(body.getString("action"), body.getString("code"), body.getString("details"));
@@ -194,7 +198,7 @@ public class NSRActivityWebView extends AppCompatActivity {
 					new Handler(Looper.getMainLooper()).post(new Runnable() {
 						public void run() {
 							try {
-								webView.evaluateJavascript(body.getString("callBack") + "(" + nsr.getWorkflowDelegate().executeLogin(getApplicationContext(), webView.getUrl()) + ")",null);
+								webView.evaluateJavascript(body.getString("callBack") + "(" + nsr.getWorkflowDelegate().executeLogin(getApplicationContext(), webView.getUrl()) + ")", null);
 							} catch (Throwable e) {
 							}
 						}
@@ -206,7 +210,7 @@ public class NSRActivityWebView extends AppCompatActivity {
 							try {
 								JSONObject paymentInfo = nsr.getWorkflowDelegate().executePayment(getApplicationContext(), body.getJSONObject("payment"), webView.getUrl());
 								if (body.has("callBack")) {
-									webView.evaluateJavascript(body.getString("callBack") + "(" + (paymentInfo != null ? paymentInfo.toString() : "") + ")",null);
+									webView.evaluateJavascript(body.getString("callBack") + "(" + (paymentInfo != null ? paymentInfo.toString() : "") + ")", null);
 								}
 							} catch (Throwable e) {
 							}
@@ -281,15 +285,21 @@ public class NSRActivityWebView extends AppCompatActivity {
 		}
 	}
 
+	private synchronized void initLocation() {
+		if (locationClient == null) {
+			Log.d(NSR.TAG, "NSRActivityWebView initLocation");
+			locationClient = LocationServices.getFusedLocationProviderClient(this);
+		}
+	}
+
 	private void getLocation(final String callBack) {
-		boolean coarse = (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED);
+		boolean coarse = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
 		boolean fine = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
 		if (coarse && fine) {
-			final FusedLocationProviderClient locationClient = LocationServices.getFusedLocationProviderClient(this);
+			initLocation();
 			LocationRequest locationRequest = LocationRequest.create();
 			locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 			locationRequest.setInterval(0);
-			locationRequest.setFastestInterval(0);
 			locationRequest.setNumUpdates(1);
 			locationClient.requestLocationUpdates(locationRequest,
 				new LocationCallback() {
@@ -301,6 +311,7 @@ public class NSRActivityWebView extends AppCompatActivity {
 								JSONObject locationAsJson = new JSONObject();
 								locationAsJson.put("latitude", location.getLatitude());
 								locationAsJson.put("longitude", location.getLongitude());
+								locationAsJson.put("altitude", location.getAltitude());
 								eval(callBack + "(" + locationAsJson.toString() + ")");
 							} catch (JSONException e) {
 							}

@@ -7,7 +7,7 @@ android {
         minSdkVersion 19
         targetSdkVersion 26
         versionCode 2
-        versionName "2.0.14"
+        versionName "2.1.0"
     }
 
     buildTypes {
@@ -20,8 +20,6 @@ android {
 
 dependencies {
     implementation 'com.android.support:appcompat-v7:26.1.0'
-    implementation 'com.google.android.gms:play-services-maps:15.0.1'
     implementation 'com.google.android.gms:play-services-location:15.0.1'
-    implementation 'com.firebase:firebase-jobdispatcher:0.8.5'
     implementation 'com.loopj.android:android-async-http:1.4.9'
 }

@@ -25,7 +25,7 @@ public class NSREventWebView {
 		try {
 			this.ctx = ctx;
 			this.nsr = nsr;
-			WebView.setWebContentsDebuggingEnabled(nsr.getSettings().getInt("dev_mode") != 0);
+			WebView.setWebContentsDebuggingEnabled(NSR.getBoolean(nsr.getSettings(),"dev_mode"));
 			webView = new WebView(ctx);
 			webView.addJavascriptInterface(this, "NSR");
 			webView.getSettings().setJavaScriptEnabled(true);
@@ -70,6 +70,9 @@ public class NSREventWebView {
 			}
 			if (body.has("event") && body.has("payload")) {
 				nsr.sendEvent(body.getString("event"), body.getJSONObject("payload"));
+			}
+			if (body.has("archiveEvent") && body.has("payload")) {
+				nsr.archiveEvent(body.getString("archiveEvent"), body.getJSONObject("payload"));
 			}
 			if (body.has("action")) {
 				nsr.sendAction(body.getString("action"), body.getString("code"), body.getString("details"));

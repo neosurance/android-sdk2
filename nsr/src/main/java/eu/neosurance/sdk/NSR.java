@@ -39,7 +39,7 @@ import java.util.TimeZone;
 
 public class NSR {
 	protected String getVersion() {
-		return "2.1.0";
+		return "2.1.1";
 	}
 
 	protected String getOs() {
@@ -162,12 +162,13 @@ public class NSR {
 			boolean fine = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
 			if (coarse && fine) {
 				JSONObject conf = getConf();
-				if (conf != null && conf.getJSONObject("position").getInt("enabled") == 1) {
+				if (conf != null && getBoolean(conf.getJSONObject("position"), "enabled")) {
 					initLocation();
 					long time = conf.getLong("time") * 1000;
 					float meters = (float) conf.getJSONObject("position").getDouble("meters");
 					LocationRequest locationRequest = LocationRequest.create();
 					locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+					locationRequest.setFastestInterval(time/3);
 					locationRequest.setInterval(time);
 					locationRequest.setSmallestDisplacement(meters);
 					Log.d(TAG, "requestLocationUpdates");

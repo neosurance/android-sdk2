@@ -48,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
 			Log.d(TAG, "sendEvent");
 			JSONObject payload = new JSONObject();
 			payload.put("type", "*");
-			NSR.getInstance(this).sendEvent("test", payload);
+			NSR.getInstance(this).sendEvent("2go", payload);
 		} catch (Exception e) {
 			Log.e(TAG, "sendEvent", e);
 		}
@@ -64,8 +64,8 @@ public class MainActivity extends AppCompatActivity {
 		try {
 			JSONObject settings = new JSONObject();
 			settings.put("base_url", "https://sandbox.neosurancecloud.net/sdk/api/v1.0/");
-			settings.put("code", "bikevo");
-			settings.put("secret_key", "uIMM9gQ5e1BDaUKtLP");
+			settings.put("code", "poste");
+			settings.put("secret_key", "Mxw5H4RWwzrpeacWyu");
 			settings.put("push_icon", R.drawable.king);
 			settings.put("ask_permission", 1);
 			settings.put("dev_mode", 1);

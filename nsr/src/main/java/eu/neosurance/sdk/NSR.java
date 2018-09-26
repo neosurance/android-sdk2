@@ -17,6 +17,7 @@ import android.os.Build;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
+import android.webkit.WebView;
 
 import com.google.android.gms.location.ActivityRecognition;
 import com.google.android.gms.location.ActivityRecognitionClient;
@@ -39,7 +40,7 @@ import java.util.TimeZone;
 
 public class NSR {
 	protected String getVersion() {
-		return "2.1.1";
+		return "2.1.2";
 	}
 
 	protected String getOs() {
@@ -47,6 +48,7 @@ public class NSR {
 	}
 
 	protected static final String PREFS_NAME = "NSRSDK";
+	protected static final String SILENT_ID = "NSR_Silent";
 	protected static final String TAG = "nsr";
 	protected static final int PERMISSIONS_MULTIPLE_ACCESSLOCATION = 0x2043;
 	protected static final int PERMISSIONS_MULTIPLE_IMAGECAPTURE = 0x2049;

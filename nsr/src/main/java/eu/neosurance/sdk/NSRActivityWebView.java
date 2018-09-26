@@ -7,6 +7,8 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.media.ExifInterface;
 import android.net.Uri;
@@ -38,6 +40,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class NSRActivityWebView extends AppCompatActivity {
 	private WebView webView;
@@ -51,8 +54,8 @@ public class NSRActivityWebView extends AppCompatActivity {
 		nsr.registerWebView(this);
 		try {
 			String url = getIntent().getExtras().getString("url");
-			WebView.setWebContentsDebuggingEnabled(NSR.getBoolean(nsr.getSettings(),"dev_mode"));
 			webView = new WebView(this);
+			WebView.setWebContentsDebuggingEnabled(NSR.getBoolean(nsr.getSettings(), "dev_mode"));
 			webView.addJavascriptInterface(this, "NSSdk");
 			webView.getSettings().setJavaScriptEnabled(true);
 			webView.getSettings().setAllowFileAccessFromFileURLs(true);
@@ -193,6 +196,23 @@ public class NSRActivityWebView extends AppCompatActivity {
 							});
 						}
 					});
+				}
+				if ("geoCode".equals(what) && body.has("location") && body.has("callBack")) {
+					Geocoder geocoder = null;
+					if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+						geocoder = new Geocoder(this, Locale.forLanguageTag(nsr.getLang()));
+					}
+					JSONObject location = body.getJSONObject("location");
+					List<Address> addresses = geocoder.getFromLocation(location.getDouble("latitude"), location.getDouble("longitude"), 1);
+					if (addresses != null && addresses.size() > 0) {
+						Address adr = addresses.get(0);
+						JSONObject address = new JSONObject();
+						address.put("countryCode", adr.getCountryCode().toUpperCase());
+						address.put("countryName", adr.getCountryName());
+						String adrLine = adr.getAddressLine(0);
+						address.put("address", adrLine != null ? adrLine : "");
+						eval(body.getString("callBack") + "(" + address.toString() + ")");
+					}
 				}
 				if (nsr.getWorkflowDelegate() != null && "executeLogin".equals(what) && body.has("callBack")) {
 					new Handler(Looper.getMainLooper()).post(new Runnable() {

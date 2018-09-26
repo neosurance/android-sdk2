@@ -21,18 +21,23 @@ public class NSREventWebView {
 	private Context ctx;
 	private NSR nsr;
 
-	protected NSREventWebView(Context ctx, NSR nsr) {
+	protected NSREventWebView(final Context ctx, final NSR nsr) {
 		try {
 			this.ctx = ctx;
 			this.nsr = nsr;
-			WebView.setWebContentsDebuggingEnabled(NSR.getBoolean(nsr.getSettings(),"dev_mode"));
-			webView = new WebView(ctx);
-			webView.addJavascriptInterface(this, "NSR");
-			webView.getSettings().setJavaScriptEnabled(true);
-			webView.getSettings().setAllowFileAccessFromFileURLs(true);
-			webView.getSettings().setAllowUniversalAccessFromFileURLs(true);
-			webView.getSettings().setDomStorageEnabled(true);
-			webView.loadUrl("file:///android_asset/eventCrucher.html");
+			final NSREventWebView eventWebView = this;
+			new Handler(Looper.getMainLooper()).post(new Runnable() {
+				public void run() {
+					webView = new WebView(ctx);
+					WebView.setWebContentsDebuggingEnabled(NSR.getBoolean(nsr.getSettings(), "dev_mode"));
+					webView.addJavascriptInterface(eventWebView, "NSR");
+					webView.getSettings().setJavaScriptEnabled(true);
+					webView.getSettings().setAllowFileAccessFromFileURLs(true);
+					webView.getSettings().setAllowUniversalAccessFromFileURLs(true);
+					webView.getSettings().setDomStorageEnabled(true);
+					webView.loadUrl("file:///android_asset/eventCrucher.html");
+				}
+			});
 		} catch (Exception e) {
 			Log.e(NSR.TAG, e.getMessage(), e);
 		}
@@ -85,7 +90,7 @@ public class NSREventWebView {
 				if ("init".equals(what) && body.has("callBack")) {
 					nsr.authorize(new NSRAuth() {
 						public void authorized(boolean authorized) throws Exception {
-							if(authorized) {
+							if (authorized) {
 								JSONObject message = new JSONObject();
 								message.put("api", nsr.getSettings().getString("base_url"));
 								message.put("token", nsr.getToken());
@@ -99,7 +104,7 @@ public class NSREventWebView {
 				if ("token".equals(what) && body.has("callBack")) {
 					nsr.authorize(new NSRAuth() {
 						public void authorized(boolean authorized) throws Exception {
-							if(authorized) {
+							if (authorized) {
 								eval(body.getString("callBack") + "('" + nsr.getToken() + "')");
 							}
 						}

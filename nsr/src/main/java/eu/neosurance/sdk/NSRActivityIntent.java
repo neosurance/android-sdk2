@@ -29,7 +29,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class NSRActivityIntent extends IntentService {
-	private static final String ID = "NSRActivityIntent";
 
 	public NSRActivityIntent() {
 		super("NSRActivityIntent");
@@ -40,8 +39,8 @@ public class NSRActivityIntent extends IntentService {
 		super.onCreate();
 		if (Build.VERSION.SDK_INT >= 26) {
 			NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-			notificationManager.createNotificationChannel(new NotificationChannel(ID, ID, NotificationManager.IMPORTANCE_NONE));
-			NotificationCompat.Builder notification = new NotificationCompat.Builder(this, ID);
+			notificationManager.createNotificationChannel(new NotificationChannel(NSR.SILENT_ID, NSR.SILENT_ID, NotificationManager.IMPORTANCE_NONE));
+			NotificationCompat.Builder notification = new NotificationCompat.Builder(this, NSR.SILENT_ID);
 			notification.setPriority(NotificationCompat.PRIORITY_MIN);
 			startForeground(1, notification.build());
 		}
@@ -49,10 +48,6 @@ public class NSRActivityIntent extends IntentService {
 
 	@Override
 	public void onHandleIntent(Intent intent) {
-		if (Build.VERSION.SDK_INT >= 26) {
-			NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-			notificationManager.deleteNotificationChannel(ID);
-		}
 		Log.d(NSR.TAG, "NSRActivityIntent");
 		final NSR nsr = NSR.getInstance(getApplicationContext());
 		JSONObject conf = nsr.getConf();

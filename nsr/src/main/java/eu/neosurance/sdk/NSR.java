@@ -17,7 +17,6 @@ import android.os.Build;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
-import android.webkit.WebView;
 
 import com.google.android.gms.location.ActivityRecognition;
 import com.google.android.gms.location.ActivityRecognitionClient;
@@ -40,7 +39,7 @@ import java.util.TimeZone;
 
 public class NSR {
 	protected String getVersion() {
-		return "2.1.2";
+		return "2.1.3";
 	}
 
 	protected String getOs() {
@@ -61,6 +60,8 @@ public class NSR {
 
 	private NSRSecurityDelegate securityDelegate = null;
 	private NSRWorkflowDelegate workflowDelegate = null;
+	private NSRPushDelegate pushDelegate = null;
+
 	private NSRActivityWebView activityWebView = null;
 
 	private FusedLocationProviderClient locationClient = null;
@@ -105,6 +106,12 @@ public class NSR {
 					if (s != null) {
 						Log.d(TAG, "making workflowDelegate... " + s);
 						instance.setWorkflowDelegate((NSRWorkflowDelegate) Class.forName(s).newInstance());
+					}
+
+					s = instance.getData("pushDelegateClass");
+					if (s != null) {
+						Log.d(TAG, "making pushDelegateClass... " + s);
+						instance.setPushDelegate((NSRPushDelegate) Class.forName(s).newInstance());
 					}
 
 					instance.initJob();
@@ -170,7 +177,7 @@ public class NSR {
 					float meters = (float) conf.getJSONObject("position").getDouble("meters");
 					LocationRequest locationRequest = LocationRequest.create();
 					locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-					locationRequest.setFastestInterval(time/3);
+					locationRequest.setFastestInterval(time / 3);
 					locationRequest.setInterval(time);
 					locationRequest.setSmallestDisplacement(meters);
 					Log.d(TAG, "requestLocationUpdates");
@@ -395,6 +402,19 @@ public class NSR {
 		this.workflowDelegate = workflowDelegate;
 	}
 
+	protected NSRPushDelegate getPushDelegate() {
+		return pushDelegate;
+	}
+
+	public void setPushDelegate(NSRPushDelegate pushDelegate) {
+		if (gracefulDegradate()) {
+			return;
+		}
+		setData("pushDelegateClass", pushDelegate.getClass().getName());
+		this.pushDelegate = pushDelegate;
+	}
+
+
 	public void setup(final JSONObject settings) {
 		if (gracefulDegradate()) {
 			return;
@@ -589,7 +609,7 @@ public class NSR {
 		}
 	}
 
-	protected void crunchEvent(final String event, final JSONObject payload) throws Exception {
+	public void crunchEvent(final String event, final JSONObject payload) throws Exception {
 		JSONObject conf = getConf();
 		if (getBoolean(conf, "local_tracking")) {
 			Log.d(NSR.TAG, "crunchEvent: " + event + " payload: " + payload.toString());
@@ -657,7 +677,14 @@ public class NSR {
 											JSONObject push = pushes.getJSONObject(0);
 											String imageUrl = push.has("imageUrl") ? push.getString("imageUrl") : null;
 											String url = push.has("url") ? push.getString("url") : null;
-											PendingIntent pendingIntent = (url != null && !"".equals(url)) ? PendingIntent.getActivity(ctx, (int) System.currentTimeMillis(), makeActivityWebView(url), PendingIntent.FLAG_UPDATE_CURRENT) : null;
+											PendingIntent pendingIntent = null;
+											if (url != null && !"".equals(url)) {
+												if (getPushDelegate() != null) {
+													pendingIntent = getPushDelegate().makePendingIntent(ctx, push);
+												} else {
+													pendingIntent = PendingIntent.getActivity(ctx, (int) System.currentTimeMillis(), makeActivityWebView(url), PendingIntent.FLAG_UPDATE_CURRENT);
+												}
+											}
 											NSRNotification.sendNotification(ctx, push.getString("title"), push.getString("body"), imageUrl, pendingIntent);
 										}
 									} else {

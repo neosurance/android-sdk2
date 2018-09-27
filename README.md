@@ -31,7 +31,7 @@ it, simply add the following line to your project:
 	```gradle
 	dependencies {
 		...
-		implementation 'com.github.neosurance:android-sdk2:2.1.2'
+		implementation 'com.github.neosurance:android-sdk2:2.1.3'
 	}
 	```
 
@@ -102,8 +102,7 @@ it, simply add the following line to your project:
 		void secureRequest(Context ctx, String endpoint, JSONObject payload, JSONObject headers, NSRSecurityResponse completionHandler) throws Exception;
 	}
 	```
-	It's *mandatory* that your **securityDelegate** implement the **default constructor**.
-	
+	It's *mandatory* that your **securityDelegate** implements the **default constructor**.  
 	Then use the ***setSecurityDelegate*** method
 	
 	```java
@@ -121,8 +120,7 @@ it, simply add the following line to your project:
 	}
 	```
 	
-	It's *mandatory* that your ** workflowDelegate** implement the **default constructor**.
-	
+	It's *mandatory* that your **workflowDelegate** implements the **default constructor**.  
 	Then use the ***setWorkflowDelegate*** method
 
 	```java
@@ -137,7 +135,24 @@ it, simply add the following line to your project:
 	NSR.getInstance(this).paymentExecuted(<paymentTransactionInfo>,<theGivenUrl>);
 	```
 	
-4. ### registerUser  
+4. ### setPushDelegate *optional*   
+	If you want intercept the push interaction a **pushDelegate** implementing the following interface can be configured:
+	
+	```java
+	public interface NSRPushDelegate {
+		PendingIntent makePendingIntent(Context ctx, JSONObject push);
+	}
+	```
+	The task of this delegate is to provide the **PendingIntent** associated with the push.  
+	The ***push*** parameter contains all the relevant informations.  
+	It's *mandatory* that your **pushDelegate** implements the **default constructor**.  
+	Then use the ***setPushDelegate*** method
+	
+	```java
+	NSR.getInstance(this).setPushDelegate(<yourPushDelegate>);
+	```
+	
+5. ### registerUser  
 	When the user is recognized by your application, register him in our *SDK* creating an **NSRUser** and using the **registerUser** method.  
 	The **NSRUser** has the following fields:
 	
@@ -165,14 +180,14 @@ it, simply add the following line to your project:
 	user.setLastName("Doe");
 	NSR.getInstance(this).registerUser(user);
 	```
-5. ### forgetUser *optional*
+6. ### forgetUser *optional*
 	If you want propagate user logout to the SDK use the **forgetUser** method.  
 	Note that without user no tracking will be performed.
 	
 	```java
 	NSR.getInstance(this).forgetUser();
 	```
-6. ### showApp *optional*
+7. ### showApp *optional*
 	Is possible to show the list of the purchased policies (*communityApp*) using the **showApp** methods
 	
 	```java
@@ -185,7 +200,7 @@ it, simply add the following line to your project:
 	params.put("page", "profiles");
 	NSR.getInstance(this).showApp(params);
 	```
-7. ### showUrl *optional*
+8. ### showUrl *optional*
 	If custom web views are needed the **showUrl** methods can be used
 	
 	```java
@@ -198,7 +213,7 @@ it, simply add the following line to your project:
 	params.put("privacy", true);
 	NSR.getInstance(this).showUrl(url, params);
 	```
-8. ### sendEvent *optional*
+9. ### sendEvent *optional*
 	The application can send explicit events to the system with **sendEvent** method
 	
 	```java
@@ -208,7 +223,7 @@ it, simply add the following line to your project:
 	NSR.getInstance(this).sendEvent("position", payload);
 	```
 	
-9. ### sendAction *optional*
+10. ### sendAction *optional*
 	The application can send tracing information events to the system with **sendAction** method
 	
 	```java          

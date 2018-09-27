@@ -20,6 +20,10 @@
 		android:supportsRtl="true"
 		android:theme="@style/AppTheme">
 
+		<service
+			android:name="eu.neosurance.nsrsample.PushService"
+			android:exported="false" />
+
 		<activity android:name=".MainActivity">
 			<intent-filter>
 				<action android:name="android.intent.action.MAIN" />

@@ -74,6 +74,7 @@ public class NSRActivityWebView extends AppCompatActivity {
 					}
 				}
 			});
+			webView.setOverScrollMode(WebView.OVER_SCROLL_NEVER);
 			setContentView(webView);
 			webView.loadUrl(url);
 			idle();
@@ -167,6 +168,13 @@ public class NSRActivityWebView extends AppCompatActivity {
 					} else {
 						nsr.showUrl(body.getString("url"));
 					}
+				}
+				if ("store".equals(what) && body.has("key") && body.has("data")) {
+					nsr.setJSONData(body.getString("key"), body.getJSONObject("data"));
+				}
+				if ("retrive".equals(what) && body.has("key") && body.has("callBack")) {
+					JSONObject val = nsr.getJSONData(body.getString("key"));
+					eval(body.getString("callBack") + "(" + (val != null ? val.toString() : "null") + ")");
 				}
 				if ("callApi".equals(what) && body.has("callBack")) {
 					nsr.authorize(new NSRAuth() {

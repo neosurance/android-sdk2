@@ -39,7 +39,7 @@ import java.util.TimeZone;
 
 public class NSR {
 	protected String getVersion() {
-		return "2.1.3";
+		return "2.1.4";
 	}
 
 	protected String getOs() {
@@ -146,6 +146,13 @@ public class NSR {
 		long t = System.currentTimeMillis() / 1000;
 		if (eventWebView != null && t - eventWebViewSynchTime > (60 * 60 * 8)) {
 			eventWebView.synch();
+		}
+	}
+
+	public void resetCruncher() {
+		eventWebViewSynchTime = 0;
+		if (eventWebView != null) {
+			eventWebView.reset();
 		}
 	}
 

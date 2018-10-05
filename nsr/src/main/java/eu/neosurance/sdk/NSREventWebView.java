@@ -47,6 +47,10 @@ public class NSREventWebView {
 		eval("synch()");
 	}
 
+	protected void reset() {
+		eval("localStorage.clear();synch()");
+	}
+
 	protected void crunchEvent(final String event, final JSONObject payload) {
 		try {
 			JSONObject nsrEvent = new JSONObject();
@@ -136,6 +140,13 @@ public class NSREventWebView {
 						eval(body.getString("callBack") + "(" + address.toString() + ")");
 					}
 				}
+				if ("store".equals(what) && body.has("key") && body.has("data")) {
+					nsr.setJSONData(body.getString("key"), body.getJSONObject("data"));
+				}
+				if ("retrive".equals(what) && body.has("key") && body.has("callBack")) {
+					JSONObject val = nsr.getJSONData(body.getString("key"));
+					eval(body.getString("callBack") + "(" + (val != null ? val.toString() : "null") + ")");
+				}
 				if ("callApi".equals(what) && body.has("callBack")) {
 					nsr.authorize(new NSRAuth() {
 						public void authorized(boolean authorized) throws Exception {
@@ -164,6 +175,9 @@ public class NSREventWebView {
 							});
 						}
 					});
+				}
+				if (nsr.getWorkflowDelegate() != null && "executeLogin".equals(what) && body.has("callBack")) {
+					eval(body.getString("callBack") + "(" + nsr.getWorkflowDelegate().executeLogin(ctx, "") + ")");
 				}
 			}
 		} catch (Exception e) {

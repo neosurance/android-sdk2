@@ -16,6 +16,7 @@ import android.os.BatteryManager;
 import android.os.Build;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
 
 import com.google.android.gms.location.ActivityRecognition;
@@ -39,7 +40,7 @@ import java.util.TimeZone;
 
 public class NSR {
 	protected String getVersion() {
-		return "2.1.4";
+		return "2.1.5";
 	}
 
 	protected String getOs() {
@@ -373,7 +374,52 @@ public class NSR {
 	protected void opportunisticTrace() {
 		tracePower();
 		traceConnection();
+		try {
+			String locationAuth = "notAuthorized";
+			boolean coarse = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+			boolean fine = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+			if (coarse && fine)
+				locationAuth = "authorized";
+			else if (fine)
+				locationAuth = "fine";
+			else if (coarse)
+				locationAuth = "coarse";
+			String lastLocationAuth = getLastLocationAuth();
+			if (!locationAuth.equals(lastLocationAuth)) {
+				setLastLocationAuth(locationAuth);
+				JSONObject payload = new JSONObject();
+				payload.put("status", locationAuth);
+				crunchEvent("locationAuth", payload);
+			}
+
+			String pushAuth = (NotificationManagerCompat.from(ctx).areNotificationsEnabled()) ? "authorized" : "notAuthorized";
+			String lastPushAuth = getLastPushAuth();
+			if (!pushAuth.equals(lastPushAuth)) {
+				setLastPushAuth(pushAuth);
+				JSONObject payload = new JSONObject();
+				payload.put("status", pushAuth);
+				crunchEvent("pushAuth", payload);
+			}
+		} catch (Exception e) {
+		}
 	}
+
+	protected String getLastLocationAuth() {
+		return getData("locationAuth");
+	}
+
+	protected void setLastLocationAuth(String locationAuth) {
+		setData("locationAuth", locationAuth);
+	}
+
+	protected String getLastPushAuth() {
+		return getData("pushAuth");
+	}
+
+	protected void setLastPushAuth(String pushAuth) {
+		setData("pushAuth", pushAuth);
+	}
+
 
 	protected void registerWebView(NSRActivityWebView activityWebView) {
 		if (this.activityWebView != null)
@@ -475,7 +521,7 @@ public class NSR {
 								devicePayLoad.put("push_token", pushToken);
 							}
 							devicePayLoad.put("os", getOs());
-							devicePayLoad.put("version", Build.VERSION.RELEASE + " " + Build.VERSION_CODES.class.getFields()[android.os.Build.VERSION.SDK_INT].getName());
+							devicePayLoad.put("version", "[sdk:" + getVersion() + "] " + Build.VERSION.RELEASE + " " + Build.VERSION_CODES.class.getFields()[android.os.Build.VERSION.SDK_INT].getName());
 							devicePayLoad.put("model", Build.MODEL);
 
 							JSONObject requestPayload = new JSONObject();
@@ -654,7 +700,7 @@ public class NSR {
 						devicePayLoad.put("push_token", pushToken);
 					}
 					devicePayLoad.put("os", getOs());
-					devicePayLoad.put("version", Build.VERSION.RELEASE + " " + Build.VERSION_CODES.class.getFields()[android.os.Build.VERSION.SDK_INT].getName());
+					devicePayLoad.put("version", "[sdk:" + getVersion() + "] " + Build.VERSION.RELEASE + " " + Build.VERSION_CODES.class.getFields()[android.os.Build.VERSION.SDK_INT].getName());
 					devicePayLoad.put("model", Build.MODEL);
 
 					JSONObject requestPayload = new JSONObject();

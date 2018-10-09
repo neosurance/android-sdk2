@@ -58,8 +58,8 @@ public class MainActivity extends AppCompatActivity {
 		try {
 			JSONObject settings = new JSONObject();
 			settings.put("base_url", "https://sandbox.neosurancecloud.net/sdk/api/v1.0/");
-			settings.put("code", "poste");
-			settings.put("secret_key", "Mxw5H4RWwzrpeacWyu");
+			settings.put("code", "<code>");
+			settings.put("secret_key", "<secret_key>");
 			settings.put("push_icon", R.drawable.king);
 			settings.put("ask_permission", 1);
 			settings.put("dev_mode", 1);

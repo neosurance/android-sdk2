@@ -1,5 +1,8 @@
 package eu.neosurance.nsrsample;
 
+import android.app.Application;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -13,7 +16,6 @@ import eu.neosurance.sdk.NSRUser;
 
 public class MainActivity extends AppCompatActivity {
 	public final static String TAG = "NSRSample";
-	private WFDelegate workflowDelegate;
 
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -24,10 +26,10 @@ public class MainActivity extends AppCompatActivity {
 	public void registerUser(View v) {
 		Log.d(TAG, "registerUser");
 		NSRUser user = new NSRUser();
-		user.setEmail("tg@neosurance.eu");
-		user.setCode("tg@neosurance.eu");
-		user.setFirstname("gio");
-		user.setLastname("gio");
+		user.setEmail("xxx@neosurance.eu");
+		user.setCode("xxx@neosurance.eu");
+		user.setFirstname("xxx");
+		user.setLastname("xxxx");
 		user.setFiscalCode("ABCDE");
 		NSR.getInstance(this).registerUser(user);
 	}
@@ -37,12 +39,26 @@ public class MainActivity extends AppCompatActivity {
 		NSR.getInstance(this).forgetUser();
 	}
 
-	public void sendEvent(View v) {
+	public void sendEventTest(View v) {
 		try {
 			Log.d(TAG, "sendEvent");
 			JSONObject payload = new JSONObject();
 			payload.put("type", "*");
 			NSR.getInstance(this).sendEvent("test", payload);
+		} catch (Exception e) {
+			Log.e(TAG, "sendEvent", e);
+		}
+	}
+
+	public void sendEvent(View v) {
+		try {
+			Log.d(TAG, "sendEvent");
+			JSONObject payload = new JSONObject();
+			payload.put("fromCode", "IT");
+			payload.put("fromCountry", "italia");
+			payload.put("toCode", "FR");
+			payload.put("toCountry", "francia");
+			NSR.getInstance(this).sendEvent("countryChange", payload);
 		} catch (Exception e) {
 			Log.e(TAG, "sendEvent", e);
 		}
@@ -63,8 +79,7 @@ public class MainActivity extends AppCompatActivity {
 			settings.put("push_icon", R.drawable.king);
 			settings.put("ask_permission", 1);
 			settings.put("dev_mode", 1);
-			workflowDelegate = new WFDelegate();
-			NSR.getInstance(this).setWorkflowDelegate(workflowDelegate);
+			NSR.getInstance(this).setWorkflowDelegate(new WFDelegate());
 			//NSR.getInstance(this).setPushDelegate(new PushDelegate());
 			NSR.getInstance(this).setup(settings);
 		} catch (JSONException e) {
@@ -72,29 +87,31 @@ public class MainActivity extends AppCompatActivity {
 		}
 	}
 
-	public void appLogin(View v){
+	public void appLogin(View v) {
 		Log.d(TAG, "appLogin");
-		if(workflowDelegate.url != null){
-			NSR.getInstance(this).loginExecuted(workflowDelegate.url);
-			workflowDelegate.url = null;
+		String url = WFDelegate.getData(this,"login_url");
+		if (url != null) {
+			NSR.getInstance(this).loginExecuted(url);
+			WFDelegate.setData(this,"login_url",null);
 		}
 	}
 
-	public void appPayment(View v){
+	public void appPayment(View v) {
 		Log.d(TAG, "appPayment");
-		try{
-			if(workflowDelegate.url != null) {
+		try {
+			String url = WFDelegate.getData(this,"payment_url");
+			if (url != null) {
 				JSONObject paymentInfo = new JSONObject();
 				paymentInfo.put("transactionCode", "abcde");
-				NSR.getInstance(this).paymentExecuted(paymentInfo, workflowDelegate.url);
-				workflowDelegate.url = null;
+				NSR.getInstance(this).paymentExecuted(paymentInfo, url);
+				WFDelegate.setData(this,"payment_url", null);
 			}
-		}catch(Exception e){
+		} catch (Exception e) {
 			Log.e(TAG, "appPayment", e);
 		}
 	}
 
-	public void timeline(View v){
+	public void timeline(View v) {
 		Log.d(TAG, "timeline");
 		NSR.getInstance(this).showUrl("https://s3.eu-west-2.amazonaws.com/neosurancesandbox/apps/timeline/app.html");
 	}

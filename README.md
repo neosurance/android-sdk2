@@ -31,7 +31,7 @@ it, simply add the following line to your project:
 	```gradle
 	dependencies {
 		...
-		implementation 'com.github.neosurance:android-sdk2:2.1.5'
+		implementation 'com.github.neosurance:android-sdk2:2.1.6'
 	}
 	```
 
@@ -117,6 +117,7 @@ it, simply add the following line to your project:
 	public interface NSRWorkflowDelegate {
 		boolean executeLogin(Context ctx, String url);
 		JSONObject executePayment(Context ctx, JSONObject payment, String url);
+		void confirmTransaction(Context ctx, JSONObject paymentInfo);
 	}
 	```
 	

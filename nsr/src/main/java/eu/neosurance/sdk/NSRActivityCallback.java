@@ -1,18 +1,13 @@
 package eu.neosurance.sdk;
 
 import android.Manifest;
-import android.app.IntentService;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.os.Build;
-import android.os.Handler;
 import android.os.Looper;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import com.google.android.gms.location.ActivityRecognitionResult;
@@ -28,35 +23,21 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Map;
 
-public class NSRActivityIntent extends IntentService {
-
-	public NSRActivityIntent() {
-		super("NSRActivityIntent");
-	}
+public class NSRActivityCallback extends BroadcastReceiver {
 
 	@Override
-	public void onCreate() {
-		super.onCreate();
-		if (Build.VERSION.SDK_INT >= 26) {
-			NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-			notificationManager.createNotificationChannel(new NotificationChannel(NSR.SILENT_ID, NSR.SILENT_ID, NotificationManager.IMPORTANCE_NONE));
-			NotificationCompat.Builder notification = new NotificationCompat.Builder(this, NSR.SILENT_ID);
-			notification.setPriority(NotificationCompat.PRIORITY_MIN);
-			startForeground(1, notification.build());
-		}
-	}
-
-	@Override
-	public void onHandleIntent(Intent intent) {
-		Log.d(NSR.TAG, "NSRActivityIntent");
-		final NSR nsr = NSR.getInstance(getApplicationContext());
+	public void onReceive(Context context, Intent intent) {
+		Log.d(NSR.TAG, "NSRActivityCallback");
+		final NSR nsr = NSR.getInstance(context);
 		JSONObject conf = nsr.getConf();
 		if (conf == null)
 			return;
 		nsr.opportunisticTrace();
 		if (ActivityRecognitionResult.hasResult(intent)) {
-			Map<String, Integer> confidences = new HashMap();
-			Map<String, Integer> counts = new HashMap();
+			Log.d(NSR.TAG, "NSRActivityCallback hasResult");
+
+			Map<String, Integer> confidences = new HashMap<>();
+			Map<String, Integer> counts = new HashMap<>();
 			String candidate = null;
 			int maxConfidence = 0;
 			try {
@@ -84,18 +65,20 @@ public class NSRActivityIntent extends IntentService {
 				Log.d(NSR.TAG, "minConfidence: " + minConfidence);
 				Log.d(NSR.TAG, "lastActivity: " + nsr.getLastActivity());
 				if (candidate != null && !candidate.equals(nsr.getLastActivity()) && maxConfidence >= minConfidence) {
+					Log.d(NSR.TAG, "NSRActivityCallback sending");
 					JSONObject payload = new JSONObject();
 					payload.put("type", candidate);
 					payload.put("confidence", maxConfidence);
 					nsr.crunchEvent("activity", payload);
 					nsr.setLastActivity(candidate);
+					Log.d(NSR.TAG, "NSRActivityCallback sent");
 
 					if (!nsr.getStillLocationSent() && "still".equals(candidate) && NSR.getBoolean(conf.getJSONObject("position"), "enabled")) {
 						Log.d(NSR.TAG, "StillLocation");
-						boolean coarse = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-						boolean fine = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-						if (coarse && fine) {
-							final FusedLocationProviderClient locationClient = LocationServices.getFusedLocationProviderClient(this);
+						boolean fine = ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+						boolean coarse = ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+						if (coarse || fine) {
+							final FusedLocationProviderClient locationClient = LocationServices.getFusedLocationProviderClient(context);
 							LocationRequest locationRequest = LocationRequest.create();
 							locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 							locationRequest.setInterval(0);
@@ -125,10 +108,10 @@ public class NSRActivityIntent extends IntentService {
 					}
 				}
 			} catch (Exception e) {
-				Log.e(NSR.TAG, "NSRActivityIntent", e);
+				Log.e(NSR.TAG, "NSRActivityCallback", e);
 			}
 		} else {
-			Log.d(NSR.TAG, "NSRActivityIntent: no result");
+			Log.d(NSR.TAG, "NSRActivityCallback: no result");
 		}
 	}
 
@@ -148,4 +131,6 @@ public class NSRActivityIntent extends IntentService {
 		}
 		return null;
 	}
+
+
 }

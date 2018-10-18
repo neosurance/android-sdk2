@@ -22,18 +22,19 @@ import cz.msebera.android.httpclient.Header;
 
 public class NSRNotification {
 	private static final String CHANNEL_ID = "NSRNotification";
-	private static boolean channelcreated = false;
 
 	public static void sendNotification(final Context ctx, final String title, final String body, final String imageUrl, final PendingIntent pendingIntent) {
 		if (NSR.gracefulDegradate()) {
 			return;
 		}
-		if (!channelcreated && Build.VERSION.SDK_INT >= 26) {
-			channelcreated = true;
-			NotificationChannel channel = new NotificationChannel(CHANNEL_ID, CHANNEL_ID, NotificationManager.IMPORTANCE_HIGH);
-			channel.setSound(Uri.parse("android.resource://" + ctx.getPackageName() + "/" + R.raw.push), new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION).build());
+		if (Build.VERSION.SDK_INT >= 26) {
 			NotificationManager notificationManager = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
-			notificationManager.createNotificationChannel(channel);
+			NotificationChannel channel = notificationManager.getNotificationChannel(CHANNEL_ID);
+			if (channel == null) {
+				channel = new NotificationChannel(CHANNEL_ID, CHANNEL_ID, NotificationManager.IMPORTANCE_HIGH);
+				channel.setSound(Uri.parse("android.resource://" + ctx.getPackageName() + "/" + R.raw.push), new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION).build());
+				notificationManager.createNotificationChannel(channel);
+			}
 		}
 		if (imageUrl != null) {
 			AsyncHttpClient client = new AsyncHttpClient();

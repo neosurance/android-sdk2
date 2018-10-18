@@ -40,7 +40,7 @@ import java.util.TimeZone;
 
 public class NSR {
 	protected String getVersion() {
-		return "2.1.5";
+		return "2.1.6";
 	}
 
 	protected String getOs() {
@@ -48,7 +48,6 @@ public class NSR {
 	}
 
 	protected static final String PREFS_NAME = "NSRSDK";
-	protected static final String SILENT_ID = "NSR_Silent";
 	protected static final String TAG = "nsr";
 	protected static final int PERMISSIONS_MULTIPLE_ACCESSLOCATION = 0x2043;
 	protected static final int PERMISSIONS_MULTIPLE_IMAGECAPTURE = 0x2049;
@@ -175,9 +174,9 @@ public class NSR {
 	protected void traceLocation() {
 		Log.d(TAG, "traceLocation");
 		try {
-			boolean coarse = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-			boolean fine = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-			if (coarse && fine) {
+			boolean fine = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+			boolean coarse = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+			if (coarse || fine) {
 				JSONObject conf = getConf();
 				if (conf != null && getBoolean(conf.getJSONObject("position"), "enabled")) {
 					initLocation();
@@ -189,10 +188,7 @@ public class NSR {
 					locationRequest.setInterval(time);
 					locationRequest.setSmallestDisplacement(meters);
 					Log.d(TAG, "requestLocationUpdates");
-					if (Build.VERSION.SDK_INT >= 26)
-						locationIntent = PendingIntent.getForegroundService(ctx, 0, new Intent(ctx, NSRLocationIntent.class), PendingIntent.FLAG_UPDATE_CURRENT);
-					else
-						locationIntent = PendingIntent.getService(ctx, 0, new Intent(ctx, NSRLocationIntent.class), PendingIntent.FLAG_UPDATE_CURRENT);
+					locationIntent = PendingIntent.getBroadcast(ctx, 0, new Intent(ctx, NSRLocationCallback.class), PendingIntent.FLAG_UPDATE_CURRENT);
 					locationClient.requestLocationUpdates(locationRequest, locationIntent);
 				}
 			}
@@ -265,10 +261,7 @@ public class NSR {
 				initActivity();
 				long time = conf.getLong("time") * 1000;
 				Log.d(TAG, "requestActivityUpdates");
-				if (Build.VERSION.SDK_INT >= 26)
-					activityIntent = PendingIntent.getForegroundService(ctx, 0, new Intent(ctx, NSRActivityIntent.class), PendingIntent.FLAG_UPDATE_CURRENT);
-				else
-					activityIntent = PendingIntent.getService(ctx, 0, new Intent(ctx, NSRActivityIntent.class), PendingIntent.FLAG_UPDATE_CURRENT);
+				activityIntent = PendingIntent.getBroadcast(ctx, 0, new Intent(ctx, NSRActivityCallback.class), PendingIntent.FLAG_UPDATE_CURRENT);
 				activityClient.requestActivityUpdates(time, activityIntent);
 			}
 		} catch (JSONException e) {
@@ -376,8 +369,8 @@ public class NSR {
 		traceConnection();
 		try {
 			String locationAuth = "notAuthorized";
-			boolean coarse = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-			boolean fine = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+			boolean fine = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+			boolean coarse = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
 			if (coarse && fine)
 				locationAuth = "authorized";
 			else if (fine)
@@ -521,7 +514,7 @@ public class NSR {
 								devicePayLoad.put("push_token", pushToken);
 							}
 							devicePayLoad.put("os", getOs());
-							devicePayLoad.put("version", "[sdk:" + getVersion() + "] " + Build.VERSION.RELEASE + " " + Build.VERSION_CODES.class.getFields()[android.os.Build.VERSION.SDK_INT].getName());
+							devicePayLoad.put("version", "[sdk:" + getVersion() + "] " + Build.VERSION.RELEASE + " " + Build.VERSION_CODES.class.getFields()[Build.VERSION.SDK_INT].getName());
 							devicePayLoad.put("model", Build.MODEL);
 
 							JSONObject requestPayload = new JSONObject();
@@ -700,7 +693,7 @@ public class NSR {
 						devicePayLoad.put("push_token", pushToken);
 					}
 					devicePayLoad.put("os", getOs());
-					devicePayLoad.put("version", "[sdk:" + getVersion() + "] " + Build.VERSION.RELEASE + " " + Build.VERSION_CODES.class.getFields()[android.os.Build.VERSION.SDK_INT].getName());
+					devicePayLoad.put("version", "[sdk:" + getVersion() + "] " + Build.VERSION.RELEASE + " " + Build.VERSION_CODES.class.getFields()[Build.VERSION.SDK_INT].getName());
 					devicePayLoad.put("model", Build.MODEL);
 
 					JSONObject requestPayload = new JSONObject();

@@ -1,9 +1,11 @@
 package eu.neosurance.sdk;
 
+import android.annotation.SuppressLint;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.location.Address;
 import android.location.Geocoder;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -21,6 +23,7 @@ public class NSREventWebView {
 	private Context ctx;
 	private NSR nsr;
 
+	@SuppressLint("SetJavaScriptEnabled")
 	protected NSREventWebView(final Context ctx, final NSR nsr) {
 		try {
 			this.ctx = ctx;
@@ -29,7 +32,9 @@ public class NSREventWebView {
 			new Handler(Looper.getMainLooper()).post(new Runnable() {
 				public void run() {
 					webView = new WebView(ctx);
-					WebView.setWebContentsDebuggingEnabled(NSR.getBoolean(nsr.getSettings(), "dev_mode"));
+					if (Build.VERSION.SDK_INT >= 21) {
+						WebView.setWebContentsDebuggingEnabled(NSR.getBoolean(nsr.getSettings(), "dev_mode"));
+					}
 					webView.addJavascriptInterface(eventWebView, "NSR");
 					webView.getSettings().setJavaScriptEnabled(true);
 					webView.getSettings().setAllowFileAccessFromFileURLs(true);
@@ -65,7 +70,9 @@ public class NSREventWebView {
 	protected void eval(final String code) {
 		new Handler(Looper.getMainLooper()).post(new Runnable() {
 			public void run() {
-				webView.evaluateJavascript(code, null);
+				if (Build.VERSION.SDK_INT >= 21) {
+					webView.evaluateJavascript(code, null);
+				}
 			}
 		});
 	}

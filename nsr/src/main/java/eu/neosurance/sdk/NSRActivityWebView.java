@@ -1,6 +1,7 @@
 package eu.neosurance.sdk;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -12,6 +13,7 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.media.ExifInterface;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -48,6 +50,7 @@ public class NSRActivityWebView extends AppCompatActivity {
 	private FusedLocationProviderClient locationClient = null;
 	private NSR nsr;
 
+	@SuppressLint("SetJavaScriptEnabled")
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		nsr = NSR.getInstance(getApplicationContext());
@@ -55,7 +58,9 @@ public class NSRActivityWebView extends AppCompatActivity {
 		try {
 			String url = getIntent().getExtras().getString("url");
 			webView = new WebView(this);
-			WebView.setWebContentsDebuggingEnabled(NSR.getBoolean(nsr.getSettings(), "dev_mode"));
+			if (Build.VERSION.SDK_INT >= 21) {
+				WebView.setWebContentsDebuggingEnabled(NSR.getBoolean(nsr.getSettings(), "dev_mode"));
+			}
 			webView.addJavascriptInterface(this, "NSSdk");
 			webView.getSettings().setJavaScriptEnabled(true);
 			webView.getSettings().setAllowFileAccessFromFileURLs(true);
@@ -100,7 +105,7 @@ public class NSRActivityWebView extends AppCompatActivity {
 		new Handler(Looper.getMainLooper()).post(new Runnable() {
 			public void run() {
 				try {
-					if (webView != null) {
+					if (webView != null && Build.VERSION.SDK_INT >= 21) {
 						webView.evaluateJavascript(code, null);
 					}
 				} catch (Throwable e) {
@@ -206,27 +211,28 @@ public class NSRActivityWebView extends AppCompatActivity {
 					});
 				}
 				if ("geoCode".equals(what) && body.has("location") && body.has("callBack")) {
-					Geocoder geocoder = null;
-					if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-						geocoder = new Geocoder(this, Locale.forLanguageTag(nsr.getLang()));
-					}
-					JSONObject location = body.getJSONObject("location");
-					List<Address> addresses = geocoder.getFromLocation(location.getDouble("latitude"), location.getDouble("longitude"), 1);
-					if (addresses != null && addresses.size() > 0) {
-						Address adr = addresses.get(0);
-						JSONObject address = new JSONObject();
-						address.put("countryCode", adr.getCountryCode().toUpperCase());
-						address.put("countryName", adr.getCountryName());
-						String adrLine = adr.getAddressLine(0);
-						address.put("address", adrLine != null ? adrLine : "");
-						eval(body.getString("callBack") + "(" + address.toString() + ")");
+					if (Build.VERSION.SDK_INT >= 21) {
+						Geocoder geocoder = new Geocoder(this, Locale.forLanguageTag(nsr.getLang()));
+						JSONObject location = body.getJSONObject("location");
+						List<Address> addresses = geocoder.getFromLocation(location.getDouble("latitude"), location.getDouble("longitude"), 1);
+						if (addresses != null && addresses.size() > 0) {
+							Address adr = addresses.get(0);
+							JSONObject address = new JSONObject();
+							address.put("countryCode", adr.getCountryCode().toUpperCase());
+							address.put("countryName", adr.getCountryName());
+							String adrLine = adr.getAddressLine(0);
+							address.put("address", adrLine != null ? adrLine : "");
+							eval(body.getString("callBack") + "(" + address.toString() + ")");
+						}
 					}
 				}
 				if (nsr.getWorkflowDelegate() != null && "executeLogin".equals(what) && body.has("callBack")) {
 					new Handler(Looper.getMainLooper()).post(new Runnable() {
 						public void run() {
 							try {
-								webView.evaluateJavascript(body.getString("callBack") + "(" + nsr.getWorkflowDelegate().executeLogin(getApplicationContext(), webView.getUrl()) + ")", null);
+								if (Build.VERSION.SDK_INT >= 21) {
+									webView.evaluateJavascript(body.getString("callBack") + "(" + nsr.getWorkflowDelegate().executeLogin(getApplicationContext(), webView.getUrl()) + ")", null);
+								}
 							} catch (Throwable e) {
 							}
 						}
@@ -237,9 +243,19 @@ public class NSRActivityWebView extends AppCompatActivity {
 						public void run() {
 							try {
 								JSONObject paymentInfo = nsr.getWorkflowDelegate().executePayment(getApplicationContext(), body.getJSONObject("payment"), webView.getUrl());
-								if (body.has("callBack")) {
+								if (body.has("callBack") && Build.VERSION.SDK_INT >= 21) {
 									webView.evaluateJavascript(body.getString("callBack") + "(" + (paymentInfo != null ? paymentInfo.toString() : "") + ")", null);
 								}
+							} catch (Throwable e) {
+							}
+						}
+					});
+				}
+				if (nsr.getWorkflowDelegate() != null && "confirmTransaction".equals(what) && body.has("paymentInfo")) {
+					new Handler(Looper.getMainLooper()).post(new Runnable() {
+						public void run() {
+							try {
+								nsr.getWorkflowDelegate().confirmTransaction(getApplicationContext(), body.getJSONObject("paymentInfo"));
 							} catch (Throwable e) {
 							}
 						}
@@ -282,7 +298,7 @@ public class NSRActivityWebView extends AppCompatActivity {
 	}
 
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if (requestCode == NSR.REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK) {
+		if (Build.VERSION.SDK_INT >= 21 && requestCode == NSR.REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK) {
 			try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 				int orientation = new ExifInterface(imageFile().getAbsolutePath()).getAttributeInt(ExifInterface.TAG_ORIENTATION, 0);
 				int degree = 0;
@@ -321,9 +337,9 @@ public class NSRActivityWebView extends AppCompatActivity {
 	}
 
 	private void getLocation(final String callBack) {
-		boolean coarse = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-		boolean fine = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-		if (coarse && fine) {
+		boolean fine = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+		boolean coarse = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+		if (coarse || fine) {
 			initLocation();
 			LocationRequest locationRequest = LocationRequest.create();
 			locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
@@ -362,7 +378,7 @@ public class NSRActivityWebView extends AppCompatActivity {
 		new Handler().postDelayed(new Runnable() {
 			public void run() {
 				try {
-					if (webView != null) {
+					if (webView != null && Build.VERSION.SDK_INT >= 21) {
 						webView.evaluateJavascript("(function() { return (window.document.body.className.indexOf('NSR') == -1 ? false : true); })();", new ValueCallback<String>() {
 							public void onReceiveValue(String value) {
 								if ("true".equals(value)) {

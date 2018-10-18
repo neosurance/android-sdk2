@@ -10,15 +10,21 @@ import eu.neosurance.sdk.NSRWorkflowDelegate;
 
 public class WFDelegate implements NSRWorkflowDelegate {
 
-
+	@Override
 	public boolean executeLogin(final Context ctx, final String url) {
 		setData(ctx, "login_url", url);
 		return true;
 	}
 
+	@Override
 	public JSONObject executePayment(final Context ctx, final JSONObject payment, final String url) {
 		setData(ctx, "payment_url", url);
 		return null;
+	}
+
+	@Override
+	public void confirmTransaction(Context ctx, JSONObject paymentInfo) {
+
 	}
 
 	public static String getData(Context ctx, String key) {

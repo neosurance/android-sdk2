@@ -73,10 +73,11 @@ public class NSRActivityWebView extends AppCompatActivity {
 						intent.setDataAndType(Uri.parse(url), "application/pdf");
 						intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
 						startActivity(intent);
-						return true;
 					} else {
-						return false;
+						Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+						startActivity( intent );
 					}
+					return true;
 				}
 			});
 			webView.setOverScrollMode(WebView.OVER_SCROLL_NEVER);

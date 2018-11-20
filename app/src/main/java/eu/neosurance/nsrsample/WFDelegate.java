@@ -2,7 +2,9 @@ package eu.neosurance.nsrsample;
 
 import android.app.Application;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.support.v4.content.LocalBroadcastManager;
 
 import org.json.JSONObject;
 
@@ -28,7 +30,7 @@ public class WFDelegate implements NSRWorkflowDelegate {
 	}
 
 	public static String getData(Context ctx, String key) {
-		SharedPreferences sp = ctx.getSharedPreferences("NSR_SAMPLE", Application.MODE_PRIVATE);
+		SharedPreferences sp = ctx.getSharedPreferences("NSRSample", Application.MODE_PRIVATE);
 		if (sp.contains(key)) {
 			return sp.getString(key, "");
 		} else {
@@ -37,7 +39,7 @@ public class WFDelegate implements NSRWorkflowDelegate {
 	}
 
 	public static void setData(Context ctx, String key, String value) {
-		SharedPreferences sp = ctx.getSharedPreferences("NSR_SAMPLE", Application.MODE_PRIVATE);
+		SharedPreferences sp = ctx.getSharedPreferences("NSRSample", Application.MODE_PRIVATE);
 		SharedPreferences.Editor editor = sp.edit();
 		if (value != null) {
 			editor.putString(key, value);

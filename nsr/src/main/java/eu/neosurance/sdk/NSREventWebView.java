@@ -183,8 +183,12 @@ public class NSREventWebView {
 						}
 					});
 				}
-				if (nsr.getWorkflowDelegate() != null && "executeLogin".equals(what) && body.has("callBack")) {
-					eval(body.getString("callBack") + "(" + nsr.getWorkflowDelegate().executeLogin(ctx, "") + ")");
+				if ("accurateLocation".equals(what) && body.has("meters") && body.has("duration")) {
+					boolean extend = nsr.getBoolean(body, "extend");
+					nsr.accurateLocation(body.getDouble("meters"), body.getInt("duration"), extend);
+				}
+				if ("accurateLocationEnd".equals(what)) {
+					nsr.accurateLocationEnd();
 				}
 			}
 		} catch (Exception e) {

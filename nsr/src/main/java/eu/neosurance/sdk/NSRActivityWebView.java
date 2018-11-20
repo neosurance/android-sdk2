@@ -365,12 +365,8 @@ public class NSRActivityWebView extends AppCompatActivity {
 				}, null);
 		} else {
 			List<String> permissionsList = new ArrayList<String>();
-			if (!fine) {
-				permissionsList.add(Manifest.permission.ACCESS_FINE_LOCATION);
-			}
-			if (!coarse) {
-				permissionsList.add(Manifest.permission.ACCESS_COARSE_LOCATION);
-			}
+			permissionsList.add(Manifest.permission.ACCESS_FINE_LOCATION);
+			permissionsList.add(Manifest.permission.ACCESS_COARSE_LOCATION);
 			ActivityCompat.requestPermissions(this, permissionsList.toArray(new String[permissionsList.size()]), NSR.PERMISSIONS_MULTIPLE_ACCESSLOCATION);
 		}
 	}

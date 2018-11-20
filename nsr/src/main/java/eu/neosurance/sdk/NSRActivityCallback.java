@@ -97,7 +97,6 @@ public class NSRActivityCallback extends BroadcastReceiver {
 												payload.put("altitude", lastLocation.getAltitude());
 												Log.d(NSR.TAG, "StillLocation: " + payload);
 												nsr.crunchEvent("position", payload);
-												nsr.setLastLocation(lastLocation);
 												nsr.setStillLocationSent(true);
 											} catch (Exception e) {
 											}

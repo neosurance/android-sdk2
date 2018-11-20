@@ -14,6 +14,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.BatteryManager;
 import android.os.Build;
+import android.os.Looper;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.NotificationManagerCompat;
@@ -22,6 +23,7 @@ import android.util.Log;
 import com.google.android.gms.location.ActivityRecognition;
 import com.google.android.gms.location.ActivityRecognitionClient;
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
@@ -40,7 +42,7 @@ import java.util.TimeZone;
 
 public class NSR {
 	protected String getVersion() {
-		return "2.1.7";
+		return "2.2.0";
 	}
 
 	protected String getOs() {
@@ -65,7 +67,11 @@ public class NSR {
 	private NSRActivityWebView activityWebView = null;
 
 	private FusedLocationProviderClient locationClient = null;
-	private PendingIntent locationIntent = null;
+	private NSRLocationCallback locationCallback = null;
+
+	private FusedLocationProviderClient hardLocationClient = null;
+	private NSRLocationCallback hardLocationCallback = null;
+	private Intent foregrounder = null;
 
 	private ActivityRecognitionClient activityClient = null;
 	private PendingIntent activityIntent = null;
@@ -128,6 +134,7 @@ public class NSR {
 	private void initJob() {
 		Log.d(TAG, "initJob");
 		try {
+			stopHardTraceLocation();
 			stopTraceLocation();
 			stopTraceActivity();
 			JSONObject conf = getConf();
@@ -137,6 +144,7 @@ public class NSR {
 			}
 			traceActivity();
 			traceLocation();
+			hardTraceLocation();
 		} catch (Exception e) {
 			Log.e(TAG, "initJob", e);
 		}
@@ -161,13 +169,20 @@ public class NSR {
 	}
 
 	private boolean needsInitJob(JSONObject conf, JSONObject oldConf) throws Exception {
-		return (oldConf == null) || (conf.getInt("time") != oldConf.getInt("time")) || (eventWebView == null && getBoolean(conf, "local_tracking"));
+		return (oldConf == null) || !oldConf.toString().equals(conf.toString()) || (eventWebView == null && getBoolean(conf, "local_tracking"));
 	}
 
 	private synchronized void initLocation() {
 		if (locationClient == null) {
 			Log.d(TAG, "initLocation");
 			locationClient = LocationServices.getFusedLocationProviderClient(ctx);
+		}
+	}
+
+	private synchronized void initHardLocation() {
+		if (hardLocationClient == null) {
+			Log.d(TAG, "initHardLocation");
+			hardLocationClient = LocationServices.getFusedLocationProviderClient(ctx);
 		}
 	}
 
@@ -188,8 +203,8 @@ public class NSR {
 					locationRequest.setInterval(time);
 					locationRequest.setSmallestDisplacement(meters);
 					Log.d(TAG, "requestLocationUpdates");
-					locationIntent = PendingIntent.getBroadcast(ctx, 0, new Intent(ctx, NSRLocationCallback.class), PendingIntent.FLAG_UPDATE_CURRENT);
-					locationClient.requestLocationUpdates(locationRequest, locationIntent);
+					locationCallback = new NSRLocationCallback(this);
+					locationClient.requestLocationUpdates(locationRequest, locationCallback, null);
 				}
 			}
 		} catch (JSONException e) {
@@ -197,44 +212,132 @@ public class NSR {
 		}
 	}
 
-	protected synchronized void stopTraceLocation() {
-		if (locationClient != null && locationIntent != null) {
-			Log.d(TAG, "stopTraceLocation");
-			locationClient.removeLocationUpdates(locationIntent);
-			locationIntent = null;
-		}
-	}
-
-	protected Location getLastLocation() {
+	protected void hardTraceLocation() {
+		Log.d(TAG, "hardTraceLocation");
 		try {
-			JSONObject loc = getJSONData("lastLocation");
-			if (loc != null) {
-				Location lastLocation = new Location("");
-				lastLocation.setLatitude(loc.getDouble("latitude"));
-				lastLocation.setLongitude(loc.getDouble("longitude"));
-				lastLocation.setAltitude(loc.getDouble("altitude"));
-				return lastLocation;
-			} else {
-				return null;
+			boolean fine = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+			boolean coarse = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+			if (coarse || fine) {
+				JSONObject conf = getConf();
+				if (conf != null && getBoolean(conf.getJSONObject("position"), "enabled")) {
+					if (isHardTraceLocation()) {
+						initHardLocation();
+						hardLocationCallback = new NSRLocationCallback(this);
+						hardLocationClient.requestLocationUpdates(makeHardLocationRequest(getHardTraceMeters()), hardLocationCallback, null);
+						Log.d(TAG, "hardTraceLocation reactivated");
+					}
+				} else {
+					stopHardTraceLocation();
+					setHardTraceEnd(0);
+				}
 			}
-		} catch (Exception e) {
-			return null;
+		} catch (JSONException e) {
+			Log.e(TAG, "hardTraceLocation", e);
 		}
 	}
 
-	protected void setLastLocation(Location lastLocation) {
-		if (lastLocation != null) {
-			try {
-				JSONObject loc = new JSONObject();
-				loc.put("latitude", lastLocation.getLatitude());
-				loc.put("longitude", lastLocation.getLongitude());
-				loc.put("altitude", lastLocation.getAltitude());
-				setJSONData("lastLocation", loc);
-			} catch (Exception e) {
-				setJSONData("lastLocation", null);
+	private LocationRequest makeHardLocationRequest(double meters) {
+		if (Build.VERSION.SDK_INT >= 26 && foregrounder == null) {
+			foregrounder = new Intent(ctx, NSRForeground.class);
+			ctx.startForegroundService(foregrounder);
+		}
+		LocationRequest locationRequest = LocationRequest.create();
+		locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+		locationRequest.setFastestInterval(0);
+		locationRequest.setInterval(0);
+		locationRequest.setSmallestDisplacement((float) meters);
+		return locationRequest;
+	}
+
+	protected synchronized void stopHardTraceLocation() {
+		if (hardLocationClient != null && hardLocationCallback != null) {
+			Log.d(TAG, "stopHardTraceLocation");
+			if (Build.VERSION.SDK_INT >= 26 && foregrounder != null) {
+				ctx.stopService(foregrounder);
+				foregrounder = null;
 			}
-		} else {
-			setJSONData("lastLocation", null);
+			hardLocationClient.removeLocationUpdates(hardLocationCallback);
+			hardLocationCallback = null;
+		}
+	}
+
+	public void accurateLocation(double meters, int duration, boolean extend) {
+		Log.i(TAG, "accurateLocation >>>>");
+		try {
+			boolean fine = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+			boolean coarse = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+			if (coarse || fine) {
+				JSONObject conf = getConf();
+				if (conf != null && getBoolean(conf.getJSONObject("position"), "enabled")) {
+					Log.i(TAG, "accurateLocation");
+					initHardLocation();
+					if (!isHardTraceLocation() || meters != getHardTraceMeters()) {
+						setHardTraceMeters(meters);
+						setHardTraceEnd((int) (System.currentTimeMillis() / 1000) + duration);
+						hardLocationCallback = new NSRLocationCallback(this);
+						hardLocationClient.requestLocationUpdates(makeHardLocationRequest((float) meters), hardLocationCallback, null);
+					}
+					if (extend) {
+						setHardTraceEnd((int) (System.currentTimeMillis() / 1000) + duration);
+					}
+				}
+			}
+		} catch (JSONException e) {
+			Log.e(TAG, "accurateLocation", e);
+		}
+	}
+
+	public void accurateLocationEnd() {
+		Log.i(TAG, "accurateLocationEnd");
+		stopHardTraceLocation();
+		setHardTraceEnd(0);
+	}
+
+	protected void checkHardTraceLocation() {
+		int hte = getHardTraceEnd();
+		if (!isHardTraceLocation()) {
+			stopHardTraceLocation();
+			setHardTraceEnd(0);
+		}
+	}
+
+	protected boolean isHardTraceLocation() {
+		int hte = getHardTraceEnd();
+		return (hte > 0 && (System.currentTimeMillis() / 1000) < hte);
+	}
+
+	protected int getHardTraceEnd() {
+		try {
+			String s = getData("hardTraceEnd");
+			return s != null ? Integer.parseInt(s) : 0;
+		} catch (Exception e) {
+			return 0;
+		}
+	}
+
+	protected void setHardTraceEnd(int hardTraceEnd) {
+		setData("hardTraceEnd", "" + hardTraceEnd);
+	}
+
+	protected double getHardTraceMeters() {
+		try {
+			String s = getData("hardTraceMeters");
+			return s != null ? Double.parseDouble(s) : 0;
+		} catch (Exception e) {
+			return 0;
+		}
+	}
+
+	protected void setHardTraceMeters(double hardTraceMeters) {
+		setData("hardTraceMeters", "" + hardTraceMeters);
+	}
+
+
+	protected synchronized void stopTraceLocation() {
+		if (locationClient != null && locationCallback != null) {
+			Log.d(TAG, "stopTraceLocation");
+			locationClient.removeLocationUpdates(locationCallback);
+			locationCallback = null;
 		}
 	}
 
@@ -382,7 +485,7 @@ public class NSR {
 				setLastLocationAuth(locationAuth);
 				JSONObject payload = new JSONObject();
 				payload.put("status", locationAuth);
-				crunchEvent("locationAuth", payload);
+				sendEvent("locationAuth", payload);
 			}
 
 			String pushAuth = (NotificationManagerCompat.from(ctx).areNotificationsEnabled()) ? "authorized" : "notAuthorized";
@@ -391,7 +494,7 @@ public class NSR {
 				setLastPushAuth(pushAuth);
 				JSONObject payload = new JSONObject();
 				payload.put("status", pushAuth);
-				crunchEvent("pushAuth", payload);
+				sendEvent("pushAuth", payload);
 			}
 		} catch (Exception e) {
 		}
@@ -412,7 +515,6 @@ public class NSR {
 	protected void setLastPushAuth(String pushAuth) {
 		setData("pushAuth", pushAuth);
 	}
-
 
 	protected void registerWebView(NSRActivityWebView activityWebView) {
 		if (this.activityWebView != null)
@@ -465,6 +567,7 @@ public class NSR {
 		if (gracefulDegradate()) {
 			return;
 		}
+
 		Log.d(TAG, "setup");
 		try {
 			if (!settings.has("ns_lang")) {

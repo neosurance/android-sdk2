@@ -1,6 +1,6 @@
 <html>
 <head>
-<script>
+	<script>
 	var ns_token
 	var ns_lang
 	var ns_api
@@ -11,6 +11,13 @@
 		} catch (err) {
 			NSR.postMessage(JSON.stringify(params))
 		}
+	}
+
+	function NSRlog(msg) {
+		console.log('EVC>> ' + msg)
+		NSRPostMsg({
+			log : 'EVC>> ' + msg
+		})
 	}
 
 	function init() {

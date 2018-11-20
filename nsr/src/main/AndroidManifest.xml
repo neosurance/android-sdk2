@@ -17,8 +17,11 @@
 				<action android:name="android.intent.action.BOOT_COMPLETED" />
 			</intent-filter>
 		</receiver>
-		<receiver android:name="eu.neosurance.sdk.NSRLocationCallback" />
 		<receiver android:name="eu.neosurance.sdk.NSRActivityCallback" />
+
+		<service
+			android:name="eu.neosurance.sdk.NSRForeground"
+			android:exported="false" />
 
 		<provider
 			android:name="android.support.v4.content.FileProvider"

@@ -77,6 +77,9 @@ public class MainActivity extends AppCompatActivity {
 				if ("accurateLocationEnd".equals(what)) {
 					NSR.getInstance(this).accurateLocationEnd();
 				}
+				if ("resetCruncher".equals(what)) {
+					NSR.getInstance(this).resetCruncher();
+				}
 			}
 		} catch (Exception e) {
 		}
@@ -127,8 +130,8 @@ public class MainActivity extends AppCompatActivity {
 		try {
 			JSONObject settings = new JSONObject();
 			settings.put("base_url", "https://sandbox.neosurancecloud.net/sdk/api/v1.0/");
-			settings.put("code", "<code>");
-			settings.put("secret_key", "<secret_key>");
+			settings.put("code", "nsr");
+			settings.put("secret_key", "VI7bHkQ5JhG2TeYQYe");
 			settings.put("push_icon", R.drawable.king);
 			settings.put("ask_permission", 1);
 			settings.put("dev_mode", 1);

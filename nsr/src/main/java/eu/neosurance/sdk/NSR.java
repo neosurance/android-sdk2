@@ -46,7 +46,7 @@ import java.util.TimeZone;
 
 public class NSR {
 	protected String getVersion() {
-		return "2.2.1";
+		return "2.2.2";
 	}
 
 	protected String getOs() {
@@ -783,9 +783,9 @@ public class NSR {
 			}
 			NSRLog.d(NSR.TAG, "crunchEvent call eventWebView");
 			eventWebView.crunchEvent(event, payload);
-			return false;
+			return true;
 		}
-		return true;
+		return false;
 	}
 
 	public void sendEvent(final String event, final JSONObject payload) {

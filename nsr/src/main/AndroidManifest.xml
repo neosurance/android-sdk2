@@ -18,6 +18,7 @@
 			</intent-filter>
 		</receiver>
 		<receiver android:name="eu.neosurance.sdk.NSRActivityCallback" />
+		<receiver android:name="eu.neosurance.sdk.NSRDelayedPush" />
 
 		<service
 			android:name="eu.neosurance.sdk.NSRForeground"

@@ -8,7 +8,7 @@ import android.location.Geocoder;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
+import android.os.SystemClock;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
@@ -40,20 +40,20 @@ public class NSREventWebView {
 					webView.getSettings().setAllowFileAccessFromFileURLs(true);
 					webView.getSettings().setAllowUniversalAccessFromFileURLs(true);
 					webView.getSettings().setDomStorageEnabled(true);
-					webView.loadUrl("file:///android_asset/eventCrucher.html");
+					webView.loadUrl("file:///android_asset/eventCrucher.html?ns_lang=" + nsr.getLang() + "&ns_log=" + nsr.isLogEnabled());
 				}
 			});
 		} catch (Exception e) {
-			Log.e(NSR.TAG, e.getMessage(), e);
+			NSRLog.e(NSR.TAG, e.getMessage(), e);
 		}
 	}
 
 	protected void synch() {
-		eval("synch()");
+		eval("EVC.synch()");
 	}
 
 	protected void reset() {
-		eval("localStorage.clear();synch()");
+		eval("localStorage.clear();EVC.synch()");
 	}
 
 	protected void crunchEvent(final String event, final JSONObject payload) {
@@ -61,9 +61,9 @@ public class NSREventWebView {
 			JSONObject nsrEvent = new JSONObject();
 			nsrEvent.put("event", event);
 			nsrEvent.put("payload", payload);
-			eval("crunchEvent(" + nsrEvent.toString() + ")");
+			eval("EVC.innerCrunchEvent(" + nsrEvent.toString() + ")");
 		} catch (JSONException e) {
-			Log.e(NSR.TAG, "crunchEvent", e);
+			NSRLog.e(NSR.TAG, "crunchEvent", e);
 		}
 	}
 
@@ -82,7 +82,7 @@ public class NSREventWebView {
 		try {
 			final JSONObject body = new JSONObject(json);
 			if (body.has("log")) {
-				Log.i(NSR.TAG, body.getString("log"));
+				NSRLog.i(NSR.TAG, body.getString("log"));
 			}
 			if (body.has("event") && body.has("payload")) {
 				nsr.sendEvent(body.getString("event"), body.getJSONObject("payload"));
@@ -93,10 +93,20 @@ public class NSREventWebView {
 			if (body.has("action")) {
 				nsr.sendAction(body.getString("action"), body.getString("code"), body.getString("details"));
 			}
+			if (body.has("push")) {
+				if (body.has("delay")) {
+					nsr.showPush(body.has("id") ? body.getString("id") : Integer.toString((int) SystemClock.elapsedRealtime()), body.getJSONObject("push"), body.getInt("delay"));
+				} else {
+					nsr.showPush(body.getJSONObject("push"));
+				}
+			}
+			if (body.has("killPush")) {
+				nsr.killPush(body.getString("killPush"));
+			}
 			if (body.has("what")) {
 				String what = body.getString("what");
-				if ("synched".equals(what)) {
-					nsr.eventWebViewSynched();
+				if ("continueInitJob".equals(what)) {
+					nsr.continueInitJob();
 				}
 				if ("init".equals(what) && body.has("callBack")) {
 					nsr.authorize(new NSRAuth() {
@@ -123,12 +133,6 @@ public class NSREventWebView {
 				}
 				if ("user".equals(what) && body.has("callBack")) {
 					eval(body.getString("callBack") + "(" + nsr.getUser().toJsonObject(true).toString() + ")");
-				}
-				if ("push".equals(what) && body.has("title") && body.has("body")) {
-					String imageUrl = body.has("imageUrl") ? body.getString("imageUrl") : null;
-					String url = body.has("url") ? body.getString("url") : null;
-					PendingIntent pendingIntent = (url != null && !"".equals(url)) ? PendingIntent.getActivity(ctx, (int) System.currentTimeMillis(), nsr.makeActivityWebView(url), PendingIntent.FLAG_UPDATE_CURRENT) : null;
-					NSRNotification.sendNotification(ctx, body.getString("title"), body.getString("body"), imageUrl, pendingIntent);
 				}
 				if ("geoCode".equals(what) && body.has("location") && body.has("callBack")) {
 					Geocoder geocoder = null;
@@ -172,7 +176,7 @@ public class NSREventWebView {
 									if (error == null) {
 										eval(body.getString("callBack") + "(" + json.toString() + ")");
 									} else {
-										Log.e(NSR.TAG, "secureRequest: " + error);
+										NSRLog.e(NSR.TAG, "secureRequest: " + error);
 										JSONObject result = new JSONObject();
 										result.put("status", "error");
 										result.put("message", error);
@@ -192,7 +196,22 @@ public class NSREventWebView {
 				}
 			}
 		} catch (Exception e) {
-			Log.e(NSR.TAG, "postMessage", e);
+			NSRLog.e(NSR.TAG, "postMessage", e);
 		}
+	}
+
+	public synchronized void finish() {
+		new Handler(Looper.getMainLooper()).post(new Runnable() {
+			public void run() {
+				try {
+					if (webView != null) {
+						webView.stopLoading();
+						webView.destroy();
+						webView = null;
+					}
+				} catch (Throwable e) {
+				}
+			}
+		});
 	}
 }

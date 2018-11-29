@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
-import android.util.Log;
 
 public class NSRForeground extends Service {
 	protected static final String SILENT_ID = "NSR_Silent";
@@ -20,7 +19,7 @@ public class NSRForeground extends Service {
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		Log.d(NSR.TAG, "NSRForeground onCreate");
+		NSRLog.d(NSR.TAG, "NSRForeground onCreate");
 		if (Build.VERSION.SDK_INT >= 26) {
 			NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 			NotificationChannel channel = new NotificationChannel(SILENT_ID, SILENT_ID, NotificationManager.IMPORTANCE_NONE);

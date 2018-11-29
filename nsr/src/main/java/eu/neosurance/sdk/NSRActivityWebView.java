@@ -23,7 +23,6 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Base64;
-import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebView;
@@ -85,7 +84,7 @@ public class NSRActivityWebView extends AppCompatActivity {
 			webView.loadUrl(url);
 			idle();
 		} catch (Exception e) {
-			Log.e(NSR.TAG, e.getMessage(), e);
+			NSRLog.e(NSR.TAG, e.getMessage(), e);
 		}
 	}
 
@@ -120,7 +119,7 @@ public class NSRActivityWebView extends AppCompatActivity {
 		try {
 			final JSONObject body = new JSONObject(json);
 			if (body.has("log")) {
-				Log.i(NSR.TAG, body.getString("log"));
+				NSRLog.i(NSR.TAG, body.getString("log"));
 			}
 			if (body.has("event") && body.has("payload")) {
 				nsr.sendEvent(body.getString("event"), body.getJSONObject("payload"));
@@ -200,7 +199,7 @@ public class NSRActivityWebView extends AppCompatActivity {
 									if (error == null) {
 										eval(body.getString("callBack") + "(" + json.toString() + ")");
 									} else {
-										Log.e(NSR.TAG, "secureRequest: " + error);
+										NSRLog.e(NSR.TAG, "secureRequest: " + error);
 										JSONObject result = new JSONObject();
 										result.put("status", "error");
 										result.put("message", error);
@@ -264,7 +263,7 @@ public class NSRActivityWebView extends AppCompatActivity {
 				}
 			}
 		} catch (Exception e) {
-			Log.e(NSR.TAG, "postMessage", e);
+			NSRLog.e(NSR.TAG, "postMessage", e);
 		}
 	}
 
@@ -325,14 +324,14 @@ public class NSRActivityWebView extends AppCompatActivity {
 				imageFile().delete();
 				eval(photoCallback + "('data:image/jpeg;base64," + Base64.encodeToString(baos.toByteArray(), Base64.NO_WRAP) + "')");
 			} catch (Exception e) {
-				Log.d(NSR.TAG, e.getMessage(), e);
+				NSRLog.e(NSR.TAG, e.getMessage(), e);
 			}
 		}
 	}
 
 	private synchronized void initLocation() {
 		if (locationClient == null) {
-			Log.d(NSR.TAG, "NSRActivityWebView initLocation");
+			NSRLog.d(NSR.TAG, "NSRActivityWebView initLocation");
 			locationClient = LocationServices.getFusedLocationProviderClient(this);
 		}
 	}

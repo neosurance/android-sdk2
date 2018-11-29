@@ -2,28 +2,32 @@ package eu.neosurance.sdk;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlarmManager;
 import android.app.Application;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.location.Location;
+import android.media.AudioAttributes;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.BatteryManager;
 import android.os.Build;
-import android.os.Looper;
+import android.os.SystemClock;
 import android.provider.Settings;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
-import android.util.Log;
 
 import com.google.android.gms.location.ActivityRecognition;
 import com.google.android.gms.location.ActivityRecognitionClient;
 import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
@@ -42,13 +46,14 @@ import java.util.TimeZone;
 
 public class NSR {
 	protected String getVersion() {
-		return "2.2.0";
+		return "2.2.1";
 	}
 
 	protected String getOs() {
 		return "Android";
 	}
 
+	private static final String CHANNEL_ID = "NSRNotification";
 	protected static final String PREFS_NAME = "NSRSDK";
 	protected static final String TAG = "nsr";
 	protected static final int PERMISSIONS_MULTIPLE_ACCESSLOCATION = 0x2043;
@@ -58,7 +63,6 @@ public class NSR {
 	private static NSR instance = null;
 	private Context ctx = null;
 	private NSREventWebView eventWebView = null;
-	private long eventWebViewSynchTime = 0;
 
 	private NSRSecurityDelegate securityDelegate = null;
 	private NSRWorkflowDelegate workflowDelegate = null;
@@ -95,34 +99,34 @@ public class NSR {
 
 	public static NSR getInstance(Context ctx) {
 		if (instance == null) {
-			Log.d(TAG, "making instance...");
+			NSRLog.d(TAG, "making instance...");
 			instance = new NSR(ctx);
 			if (!gracefulDegradate()) {
 				try {
 					String s = instance.getData("securityDelegateClass");
 					if (s != null) {
-						Log.d(TAG, "making securityDelegate... " + s);
+						NSRLog.d(TAG, "making securityDelegate... " + s);
 						instance.setSecurityDelegate((NSRSecurityDelegate) Class.forName(s).newInstance());
 					} else {
-						Log.d(TAG, "making securityDelegate... NSRDefaultSecurity");
+						NSRLog.d(TAG, "making securityDelegate... NSRDefaultSecurity");
 						instance.setSecurityDelegate(new NSRDefaultSecurity());
 					}
 
 					s = instance.getData("workflowDelegateClass");
 					if (s != null) {
-						Log.d(TAG, "making workflowDelegate... " + s);
+						NSRLog.d(TAG, "making workflowDelegate... " + s);
 						instance.setWorkflowDelegate((NSRWorkflowDelegate) Class.forName(s).newInstance());
 					}
 
 					s = instance.getData("pushDelegateClass");
 					if (s != null) {
-						Log.d(TAG, "making pushDelegateClass... " + s);
+						NSRLog.d(TAG, "making pushDelegateClass... " + s);
 						instance.setPushDelegate((NSRPushDelegate) Class.forName(s).newInstance());
 					}
 
 					instance.initJob();
 				} catch (Exception e) {
-					Log.e(TAG, "getInstance", e);
+					NSRLog.e(TAG, "getInstance", e);
 				}
 			}
 		} else {
@@ -132,40 +136,45 @@ public class NSR {
 	}
 
 	private void initJob() {
-		Log.d(TAG, "initJob");
+		NSRLog.d(TAG, "initJob");
 		try {
 			stopHardTraceLocation();
 			stopTraceLocation();
 			stopTraceActivity();
-			JSONObject conf = getConf();
-			if (conf != null && eventWebView == null && getBoolean(conf, "local_tracking")) {
-				Log.d(TAG, "Making NSREventWebView");
-				eventWebView = new NSREventWebView(ctx, this);
+			if (!synchEventWebView()) {
+				continueInitJob();
 			}
-			traceActivity();
-			traceLocation();
-			hardTraceLocation();
 		} catch (Exception e) {
-			Log.e(TAG, "initJob", e);
+			NSRLog.e(TAG, "initJob", e);
 		}
 	}
 
-	private void synchEventWebView() {
-		long t = System.currentTimeMillis() / 1000;
-		if (eventWebView != null && t - eventWebViewSynchTime > (60 * 60 * 8)) {
-			eventWebView.synch();
+	protected void continueInitJob() {
+		traceActivity();
+		traceLocation();
+		hardTraceLocation();
+	}
+
+	private boolean synchEventWebView() {
+		if (getBoolean(getConf(), "local_tracking")) {
+			if (eventWebView == null) {
+				NSRLog.d(TAG, "Making NSREventWebView");
+				eventWebView = new NSREventWebView(ctx, this);
+				return true;
+			} else {
+				eventWebView.synch();
+			}
+		} else if (eventWebView != null) {
+			eventWebView.finish();
+			eventWebView = null;
 		}
+		return false;
 	}
 
 	public void resetCruncher() {
-		eventWebViewSynchTime = 0;
 		if (eventWebView != null) {
 			eventWebView.reset();
 		}
-	}
-
-	protected void eventWebViewSynched() {
-		eventWebViewSynchTime = System.currentTimeMillis() / 1000;
 	}
 
 	private boolean needsInitJob(JSONObject conf, JSONObject oldConf) throws Exception {
@@ -174,20 +183,20 @@ public class NSR {
 
 	private synchronized void initLocation() {
 		if (locationClient == null) {
-			Log.d(TAG, "initLocation");
+			NSRLog.d(TAG, "initLocation");
 			locationClient = LocationServices.getFusedLocationProviderClient(ctx);
 		}
 	}
 
 	private synchronized void initHardLocation() {
 		if (hardLocationClient == null) {
-			Log.d(TAG, "initHardLocation");
+			NSRLog.d(TAG, "initHardLocation");
 			hardLocationClient = LocationServices.getFusedLocationProviderClient(ctx);
 		}
 	}
 
 	protected void traceLocation() {
-		Log.d(TAG, "traceLocation");
+		NSRLog.d(TAG, "traceLocation");
 		try {
 			boolean fine = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
 			boolean coarse = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
@@ -202,18 +211,18 @@ public class NSR {
 					locationRequest.setFastestInterval(time / 3);
 					locationRequest.setInterval(time);
 					locationRequest.setSmallestDisplacement(meters);
-					Log.d(TAG, "requestLocationUpdates");
+					NSRLog.d(TAG, "requestLocationUpdates");
 					locationCallback = new NSRLocationCallback(this);
 					locationClient.requestLocationUpdates(locationRequest, locationCallback, null);
 				}
 			}
 		} catch (JSONException e) {
-			Log.e(TAG, "traceLocation", e);
+			NSRLog.e(TAG, "traceLocation", e);
 		}
 	}
 
 	protected void hardTraceLocation() {
-		Log.d(TAG, "hardTraceLocation");
+		NSRLog.d(TAG, "hardTraceLocation");
 		try {
 			boolean fine = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
 			boolean coarse = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
@@ -224,7 +233,7 @@ public class NSR {
 						initHardLocation();
 						hardLocationCallback = new NSRLocationCallback(this);
 						hardLocationClient.requestLocationUpdates(makeHardLocationRequest(getHardTraceMeters()), hardLocationCallback, null);
-						Log.d(TAG, "hardTraceLocation reactivated");
+						NSRLog.d(TAG, "hardTraceLocation reactivated");
 					}
 				} else {
 					stopHardTraceLocation();
@@ -232,7 +241,7 @@ public class NSR {
 				}
 			}
 		} catch (JSONException e) {
-			Log.e(TAG, "hardTraceLocation", e);
+			NSRLog.e(TAG, "hardTraceLocation", e);
 		}
 	}
 
@@ -251,7 +260,7 @@ public class NSR {
 
 	protected synchronized void stopHardTraceLocation() {
 		if (hardLocationClient != null && hardLocationCallback != null) {
-			Log.d(TAG, "stopHardTraceLocation");
+			NSRLog.d(TAG, "stopHardTraceLocation");
 			if (Build.VERSION.SDK_INT >= 26 && foregrounder != null) {
 				ctx.stopService(foregrounder);
 				foregrounder = null;
@@ -262,14 +271,14 @@ public class NSR {
 	}
 
 	public void accurateLocation(double meters, int duration, boolean extend) {
-		Log.i(TAG, "accurateLocation >>>>");
+		NSRLog.i(TAG, "accurateLocation >>>>");
 		try {
 			boolean fine = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
 			boolean coarse = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
 			if (coarse || fine) {
 				JSONObject conf = getConf();
 				if (conf != null && getBoolean(conf.getJSONObject("position"), "enabled")) {
-					Log.i(TAG, "accurateLocation");
+					NSRLog.i(TAG, "accurateLocation");
 					initHardLocation();
 					if (!isHardTraceLocation() || meters != getHardTraceMeters()) {
 						setHardTraceMeters(meters);
@@ -283,12 +292,12 @@ public class NSR {
 				}
 			}
 		} catch (JSONException e) {
-			Log.e(TAG, "accurateLocation", e);
+			NSRLog.e(TAG, "accurateLocation", e);
 		}
 	}
 
 	public void accurateLocationEnd() {
-		Log.i(TAG, "accurateLocationEnd");
+		NSRLog.i(TAG, "accurateLocationEnd");
 		stopHardTraceLocation();
 		setHardTraceEnd(0);
 	}
@@ -335,7 +344,7 @@ public class NSR {
 
 	protected synchronized void stopTraceLocation() {
 		if (locationClient != null && locationCallback != null) {
-			Log.d(TAG, "stopTraceLocation");
+			NSRLog.d(TAG, "stopTraceLocation");
 			locationClient.removeLocationUpdates(locationCallback);
 			locationCallback = null;
 		}
@@ -351,30 +360,30 @@ public class NSR {
 
 	private synchronized void initActivity() {
 		if (activityClient == null) {
-			Log.d(TAG, "initActivity");
+			NSRLog.d(TAG, "initActivity");
 			activityClient = ActivityRecognition.getClient(ctx);
 		}
 	}
 
 	protected synchronized void traceActivity() {
-		Log.d(TAG, "traceActivity");
+		NSRLog.d(TAG, "traceActivity");
 		try {
 			JSONObject conf = getConf();
 			if (conf != null && getBoolean(conf.getJSONObject("activity"), "enabled")) {
 				initActivity();
 				long time = conf.getLong("time") * 1000;
-				Log.d(TAG, "requestActivityUpdates");
+				NSRLog.d(TAG, "requestActivityUpdates");
 				activityIntent = PendingIntent.getBroadcast(ctx, 0, new Intent(ctx, NSRActivityCallback.class), PendingIntent.FLAG_UPDATE_CURRENT);
 				activityClient.requestActivityUpdates(time, activityIntent);
 			}
 		} catch (JSONException e) {
-			Log.e(TAG, "traceActivity", e);
+			NSRLog.e(TAG, "traceActivity", e);
 		}
 	}
 
 	protected synchronized void stopTraceActivity() {
 		if (activityClient != null && activityIntent != null) {
-			Log.d(TAG, "stopTraceActivity");
+			NSRLog.d(TAG, "stopTraceActivity");
 			activityClient.removeActivityUpdates(activityIntent);
 			activityIntent = null;
 		}
@@ -389,7 +398,7 @@ public class NSR {
 	}
 
 	protected void tracePower() {
-		Log.d(TAG, "tracePower");
+		NSRLog.d(TAG, "tracePower");
 		try {
 			JSONObject conf = getConf();
 			if (conf != null && getBoolean(conf.getJSONObject("power"), "enabled")) {
@@ -406,7 +415,7 @@ public class NSR {
 				}
 			}
 		} catch (Exception e) {
-			Log.e(NSR.TAG, "tracePower", e);
+			NSRLog.e(NSR.TAG, "tracePower", e);
 		}
 	}
 
@@ -432,7 +441,7 @@ public class NSR {
 	}
 
 	protected void traceConnection() {
-		Log.d(TAG, "traceConnection");
+		NSRLog.d(TAG, "traceConnection");
 		try {
 			JSONObject conf = getConf();
 			if (conf != null && getBoolean(conf.getJSONObject("connection"), "enabled")) {
@@ -455,7 +464,7 @@ public class NSR {
 				}
 			}
 		} catch (Exception e) {
-			Log.e(NSR.TAG, "traceConnection", e);
+			NSRLog.e(NSR.TAG, "traceConnection", e);
 		}
 	}
 
@@ -567,8 +576,8 @@ public class NSR {
 		if (gracefulDegradate()) {
 			return;
 		}
-
-		Log.d(TAG, "setup");
+		NSRLog.enabled = !getBoolean(settings, "disable_log");
+		NSRLog.d(TAG, "setup");
 		try {
 			if (!settings.has("ns_lang")) {
 				settings.put("ns_lang", Locale.getDefault().getLanguage());
@@ -576,7 +585,7 @@ public class NSR {
 			if (!settings.has("push_icon")) {
 				settings.put("push_icon", R.drawable.nsr_logo);
 			}
-			Log.d(TAG, "setup: " + settings);
+			NSRLog.d(TAG, "setup: " + settings);
 			setSettings(settings);
 			if (getData("permission_requested") == null && getBoolean(settings, "ask_permission")) {
 				setData("permission_requested", "*");
@@ -592,7 +601,7 @@ public class NSR {
 				}
 			}
 		} catch (Exception e) {
-			Log.e(TAG, "setup", e);
+			NSRLog.e(TAG, "setup", e);
 		}
 	}
 
@@ -600,15 +609,15 @@ public class NSR {
 		if (gracefulDegradate()) {
 			return;
 		}
-		Log.d(TAG, "registerUser");
+		NSRLog.d(TAG, "registerUser");
 		try {
 			forgetUser();
 			setUser(user);
 			authorize(new NSRAuth() {
 				public void authorized(boolean authorized) throws Exception {
-					Log.d(TAG, "registerUser: " + (authorized ? "" : "not ") + "authorized!");
+					NSRLog.d(TAG, "registerUser: " + (authorized ? "" : "not ") + "authorized!");
 					if (authorized && getBoolean(getConf(), "send_user")) {
-						Log.d(TAG, "sendUser");
+						NSRLog.d(TAG, "sendUser");
 						try {
 							JSONObject devicePayLoad = new JSONObject();
 							devicePayLoad.put("uid", getDeviceUid());
@@ -626,27 +635,27 @@ public class NSR {
 
 							JSONObject headers = new JSONObject();
 							String token = getToken();
-							Log.d(TAG, "sendUser token: " + token);
+							NSRLog.d(TAG, "sendUser token: " + token);
 							headers.put("ns_token", token);
 							headers.put("ns_lang", getLang());
 
-							Log.d(TAG, "requestPayload: " + requestPayload.toString());
+							NSRLog.d(TAG, "requestPayload: " + requestPayload.toString());
 
 							getSecurityDelegate().secureRequest(ctx, "register", requestPayload, headers, new NSRSecurityResponse() {
 								public void completionHandler(JSONObject json, String error) throws Exception {
 									if (error != null) {
-										Log.e(TAG, "sendUser secureRequest: " + error);
+										NSRLog.e(TAG, "sendUser secureRequest: " + error);
 									}
 								}
 							});
 						} catch (Exception e) {
-							Log.e(TAG, "sendUser", e);
+							NSRLog.e(TAG, "sendUser", e);
 						}
 					}
 				}
 			});
 		} catch (Exception e) {
-			Log.e(TAG, "registerUser", e);
+			NSRLog.e(TAG, "registerUser", e);
 		}
 	}
 
@@ -654,7 +663,7 @@ public class NSR {
 		if (gracefulDegradate()) {
 			return;
 		}
-		Log.d(TAG, "forgetUser");
+		NSRLog.d(TAG, "forgetUser");
 		setConf(null);
 		setAuth(null);
 		setAppURL(null);
@@ -663,7 +672,7 @@ public class NSR {
 	}
 
 	protected void authorize(final NSRAuth delegate) throws Exception {
-		Log.d(TAG, "authorize");
+		NSRLog.d(TAG, "authorize");
 		JSONObject auth = getAuth();
 		if (auth != null && (auth.getLong("expire") - System.currentTimeMillis()) > 0) {
 			delegate.authorized(true);
@@ -687,23 +696,22 @@ public class NSR {
 						public void completionHandler(JSONObject response, String error) throws Exception {
 							if (error == null) {
 								JSONObject auth = response.getJSONObject("auth");
-								Log.d(TAG, "authorize auth: " + auth);
+								NSRLog.d(TAG, "authorize auth: " + auth);
 								setAuth(auth);
 
 								JSONObject oldConf = getConf();
 								JSONObject conf = response.getJSONObject("conf");
-								Log.d(TAG, "authorize conf: " + conf);
+								NSRLog.d(TAG, "authorize conf: " + conf);
 								setConf(conf);
 
 								String appUrl = response.getString("app_url");
-								Log.d(TAG, "authorize appUrl: " + appUrl);
+								NSRLog.d(TAG, "authorize appUrl: " + appUrl);
 								setAppURL(appUrl);
 
 								if (needsInitJob(conf, oldConf)) {
-									Log.d(TAG, "authorize needsInitJob");
+									NSRLog.d(TAG, "authorize needsInitJob");
 									initJob();
-								}
-								if (getBoolean(conf, "local_tracking")) {
+								} else {
 									synchEventWebView();
 								}
 								delegate.authorized(true);
@@ -713,7 +721,7 @@ public class NSR {
 						}
 					});
 				} catch (Exception e) {
-					Log.e(TAG, "authorize", e);
+					NSRLog.e(TAG, "authorize", e);
 					delegate.authorized(false);
 				}
 			}
@@ -724,7 +732,7 @@ public class NSR {
 		if (gracefulDegradate()) {
 			return;
 		}
-		Log.d(TAG, "sendAction - name: " + name + " policyCode: " + policyCode + " details: " + details);
+		NSRLog.d(TAG, "sendAction - name: " + name + " policyCode: " + policyCode + " details: " + details);
 		try {
 			authorize(new NSRAuth() {
 				public void authorized(boolean authorized) throws Exception {
@@ -738,44 +746,53 @@ public class NSR {
 
 					JSONObject headers = new JSONObject();
 					String token = getToken();
-					Log.d(TAG, "sendAction token: " + token);
+					NSRLog.d(TAG, "sendAction token: " + token);
 					headers.put("ns_token", token);
 					headers.put("ns_lang", getLang());
 
 					getSecurityDelegate().secureRequest(ctx, "trace", requestPayload, headers, new NSRSecurityResponse() {
 						public void completionHandler(JSONObject json, String error) throws Exception {
 							if (error != null) {
-								Log.e(TAG, "sendAction: " + error);
+								NSRLog.e(TAG, "sendAction: " + error);
 							} else {
-								Log.d(TAG, "sendAction: " + json.toString());
+								NSRLog.d(TAG, "sendAction: " + json.toString());
 							}
 						}
 					});
 				}
 			});
 		} catch (Exception e) {
-			Log.e(TAG, "sendAction", e);
+			NSRLog.e(TAG, "sendAction", e);
 		}
 	}
 
-	public void crunchEvent(final String event, final JSONObject payload) throws Exception {
-		JSONObject conf = getConf();
-		if (getBoolean(conf, "local_tracking")) {
-			Log.d(NSR.TAG, "crunchEvent: " + event + " payload: " + payload.toString());
-			snapshot(event, payload);
-			if (eventWebView != null) {
-				eventWebView.crunchEvent(event, payload);
-			}
-		} else {
+	public void crunchEvent(final String event, final JSONObject payload) {
+		if (!localCrunchEvent(event, payload)) {
 			sendEvent(event, payload);
 		}
+	}
+
+	protected boolean localCrunchEvent(final String event, final JSONObject payload) {
+		JSONObject conf = getConf();
+		if (getBoolean(conf, "local_tracking")) {
+			NSRLog.d(NSR.TAG, "crunchEvent: " + event + " payload: " + payload.toString());
+			snapshot(event, payload);
+			if (eventWebView == null) {
+				NSRLog.d(NSR.TAG, "crunchEvent Making NSREventWebView");
+				eventWebView = new NSREventWebView(ctx, this);
+			}
+			NSRLog.d(NSR.TAG, "crunchEvent call eventWebView");
+			eventWebView.crunchEvent(event, payload);
+			return false;
+		}
+		return true;
 	}
 
 	public void sendEvent(final String event, final JSONObject payload) {
 		if (gracefulDegradate()) {
 			return;
 		}
-		Log.d(TAG, "sendEvent - event: " + event + " payload: " + payload);
+		NSRLog.d(TAG, "sendEvent - event: " + event + " payload: " + payload);
 		try {
 			authorize(new NSRAuth() {
 				public void authorized(boolean authorized) throws Exception {
@@ -809,11 +826,11 @@ public class NSR {
 
 					JSONObject headers = new JSONObject();
 					String token = getToken();
-					Log.d(TAG, "sendEvent token: " + token);
+					NSRLog.d(TAG, "sendEvent token: " + token);
 					headers.put("ns_token", token);
 					headers.put("ns_lang", getLang());
 
-					Log.d(TAG, "requestPayload: " + requestPayload.toString());
+					NSRLog.d(TAG, "requestPayload: " + requestPayload.toString());
 
 					getSecurityDelegate().secureRequest(ctx, "event", requestPayload, headers, new NSRSecurityResponse() {
 						public void completionHandler(JSONObject json, String error) throws Exception {
@@ -824,35 +841,26 @@ public class NSR {
 									if (!skipPush) {
 										if (pushes.length() > 0) {
 											JSONObject push = pushes.getJSONObject(0);
-											String imageUrl = push.has("imageUrl") ? push.getString("imageUrl") : null;
-											String url = push.has("url") ? push.getString("url") : null;
-											PendingIntent pendingIntent = null;
-											if (url != null && !"".equals(url)) {
-												if (getPushDelegate() != null) {
-													pendingIntent = getPushDelegate().makePendingIntent(ctx, push);
-												} else {
-													pendingIntent = PendingIntent.getActivity(ctx, (int) System.currentTimeMillis(), makeActivityWebView(url), PendingIntent.FLAG_UPDATE_CURRENT);
-												}
-											}
-											NSRNotification.sendNotification(ctx, push.getString("title"), push.getString("body"), imageUrl, pendingIntent);
+											showPush(push);
+											localCrunchEvent("pushed", push);
 										}
 									} else {
 										if (pushes.length() > 0) {
 											JSONObject notification = pushes.getJSONObject(0);
-											Log.d(TAG, notification.toString());
+											NSRLog.d(TAG, notification.toString());
 											showUrl(notification.getString("url"));
 										}
 									}
 								}
 							} else {
-								Log.e(TAG, "sendEvent secureRequest: " + error);
+								NSRLog.e(TAG, "sendEvent secureRequest: " + error);
 							}
 						}
 					});
 				}
 			});
 		} catch (Exception e) {
-			Log.e(TAG, "sendEvent", e);
+			NSRLog.e(TAG, "sendEvent", e);
 		}
 	}
 
@@ -860,7 +868,7 @@ public class NSR {
 		if (gracefulDegradate()) {
 			return;
 		}
-		Log.d(TAG, "archiveEvent - event: " + event + " payload: " + payload);
+		NSRLog.d(TAG, "archiveEvent - event: " + event + " payload: " + payload);
 		try {
 			authorize(new NSRAuth() {
 				public void authorized(boolean authorized) throws Exception {
@@ -887,23 +895,23 @@ public class NSR {
 
 					JSONObject headers = new JSONObject();
 					String token = getToken();
-					Log.d(TAG, "archiveEvent token: " + token);
+					NSRLog.d(TAG, "archiveEvent token: " + token);
 					headers.put("ns_token", token);
 					headers.put("ns_lang", getLang());
 
-					Log.d(TAG, "requestPayload: " + requestPayload.toString());
+					NSRLog.d(TAG, "requestPayload: " + requestPayload.toString());
 
 					getSecurityDelegate().secureRequest(ctx, "archiveEvent", requestPayload, headers, new NSRSecurityResponse() {
 						public void completionHandler(JSONObject json, String error) throws Exception {
 							if (error != null) {
-								Log.e(TAG, "archiveEvent secureRequest: " + error);
+								NSRLog.e(TAG, "archiveEvent secureRequest: " + error);
 							}
 						}
 					});
 				}
 			});
 		} catch (Exception e) {
-			Log.e(TAG, "archiveEvent", e);
+			NSRLog.e(TAG, "archiveEvent", e);
 		}
 	}
 
@@ -941,7 +949,7 @@ public class NSR {
 				ctx.startActivity(makeActivityWebView(url));
 			}
 		} catch (Exception e) {
-			Log.e(TAG, "showUrl", e);
+			NSRLog.e(TAG, "showUrl", e);
 		}
 	}
 
@@ -956,8 +964,69 @@ public class NSR {
 			JSONObject user = getJSONData("user");
 			return user != null ? new NSRUser(user) : null;
 		} catch (Exception e) {
-			Log.e(TAG, "getUser", e);
+			NSRLog.e(TAG, "getUser", e);
 			return null;
+		}
+	}
+
+
+	protected void showPush(String pid, final JSONObject push, int delay) {
+		if (Build.VERSION.SDK_INT >= 24) {
+			Intent intent = new Intent(ctx, NSRDelayedPush.class);
+			intent.putExtra("push", push.toString());
+			PendingIntent pushIntent = PendingIntent.getBroadcast(ctx, pid.hashCode(), intent, PendingIntent.FLAG_ONE_SHOT);
+			ctx.getSystemService(AlarmManager.class).setExact(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime() + delay * 1000, pushIntent);
+		}
+	}
+
+	protected void killPush(String pid) {
+		if (Build.VERSION.SDK_INT >= 24) {
+			ctx.getSystemService(AlarmManager.class).cancel(PendingIntent.getBroadcast(ctx, pid.hashCode(), new Intent(ctx, NSRDelayedPush.class), PendingIntent.FLAG_ONE_SHOT));
+		}
+	}
+
+	protected void showPush(JSONObject push) {
+		if (NSR.gracefulDegradate()) {
+			return;
+		}
+		try {
+
+			if (Build.VERSION.SDK_INT >= 26) {
+				NotificationManager notificationManager = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+				NotificationChannel channel = notificationManager.getNotificationChannel(CHANNEL_ID);
+				if (channel == null) {
+					channel = new NotificationChannel(CHANNEL_ID, CHANNEL_ID, NotificationManager.IMPORTANCE_HIGH);
+					channel.setSound(Uri.parse("android.resource://" + ctx.getPackageName() + "/" + R.raw.push), new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION).build());
+					notificationManager.createNotificationChannel(channel);
+				}
+			}
+			NotificationCompat.Builder notification = new NotificationCompat.Builder(ctx, CHANNEL_ID);
+			notification.setSound(Uri.parse("android.resource://" + ctx.getPackageName() + "/" + R.raw.push));
+			try {
+				notification.setSmallIcon(NSR.getInstance(ctx).getSettings().getInt("push_icon"));
+			} catch (Exception e) {
+				notification.setSmallIcon(R.drawable.nsr_logo);
+			}
+			notification.setContentTitle(push.getString("title"));
+			notification.setContentText(push.getString("body"));
+			notification.setStyle(new NotificationCompat.BigTextStyle().bigText(push.getString("body")));
+			notification.setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+			notification.setPriority(NotificationCompat.PRIORITY_HIGH);
+			notification.setAutoCancel(true);
+			String url = push.has("url") ? push.getString("url") : null;
+			PendingIntent pendingIntent = null;
+			if (url != null && !"".equals(url)) {
+				if (getPushDelegate() != null) {
+					pendingIntent = getPushDelegate().makePendingIntent(ctx, push);
+				} else {
+					pendingIntent = PendingIntent.getActivity(ctx, (int) System.currentTimeMillis(), makeActivityWebView(url), PendingIntent.FLAG_UPDATE_CURRENT);
+				}
+			}
+			if (pendingIntent != null) {
+				notification.setContentIntent(pendingIntent);
+			}
+			NotificationManagerCompat.from(ctx).notify((int) System.currentTimeMillis(), notification.build());
+		} catch (Exception e) {
 		}
 	}
 
@@ -993,7 +1062,7 @@ public class NSR {
 		try {
 			return getAuth().has("token") ? getAuth().getString("token") : null;
 		} catch (Exception e) {
-			Log.e(TAG, "getToken", e);
+			NSRLog.e(TAG, "getToken", e);
 			return null;
 		}
 	}
@@ -1002,7 +1071,7 @@ public class NSR {
 		try {
 			return getSettings().has("push_token") ? getSettings().getString("push_token") : null;
 		} catch (Exception e) {
-			Log.e(TAG, "getPushToken", e);
+			NSRLog.e(TAG, "getPushToken", e);
 			return null;
 		}
 	}
@@ -1011,10 +1080,15 @@ public class NSR {
 		try {
 			return getSettings().has("ns_lang") ? getSettings().getString("ns_lang") : null;
 		} catch (Exception e) {
-			Log.e(TAG, "getLang", e);
+			NSRLog.e(TAG, "getLang", e);
 			return null;
 		}
 	}
+
+	protected boolean isLogEnabled() {
+		return !getBoolean(getSettings(), "disable_log");
+	}
+
 
 	protected String getAppURL() {
 		return getData("appURL");
@@ -1119,7 +1193,7 @@ public class NSR {
 			params.put("loginExecuted", "yes");
 			showUrl(url, params);
 		} catch (Exception e) {
-			Log.e(TAG, "loginExecuted", e);
+			NSRLog.e(TAG, "loginExecuted", e);
 		}
 	}
 
@@ -1132,7 +1206,7 @@ public class NSR {
 			params.put("paymentExecuted", paymentInfo.toString());
 			showUrl(url, params);
 		} catch (Exception e) {
-			Log.e(TAG, "paymentExecuted", e);
+			NSRLog.e(TAG, "paymentExecuted", e);
 		}
 	}
 }

@@ -3,7 +3,6 @@ package eu.neosurance.sdk;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
@@ -24,7 +23,7 @@ public class NSRDefaultSecurity implements NSRSecurityDelegate {
 				try {
 					final AsyncHttpClient client = new AsyncHttpClient();
 					final String url = NSR.getInstance(ctx).getSettings().getString("base_url") + endpoint;
-					Log.d(NSR.TAG, "NSRDefaultSecurity: " + url);
+					NSRLog.d(NSR.TAG, "NSRDefaultSecurity: " + url);
 					if (headers != null) {
 						Iterator<String> keys = headers.keys();
 						while (keys.hasNext()) {
@@ -38,10 +37,12 @@ public class NSRDefaultSecurity implements NSRSecurityDelegate {
 					client.post(ctx, url, entity, "application/json;charset=UTF-8", new AsyncHttpResponseHandler() {
 						public void onSuccess(int statusCode, Header[] headers, byte[] response) {
 							try {
-								JSONObject json = new JSONObject(new String(response, "UTF-8"));
+								String s =new String(response, "UTF-8");
+								NSRLog.d(NSR.TAG, "response: " + s);
+								JSONObject json = new JSONObject(s);
 								completionHandler.completionHandler(json, null);
 							} catch (Exception e) {
-								Log.e(NSR.TAG, e.getMessage());
+								NSRLog.e(NSR.TAG, e.getMessage());
 							}
 						}
 
@@ -49,12 +50,12 @@ public class NSRDefaultSecurity implements NSRSecurityDelegate {
 							try {
 								completionHandler.completionHandler(null, error.toString());
 							} catch (Exception e) {
-								Log.e(NSR.TAG, e.getMessage());
+								NSRLog.e(NSR.TAG, e.getMessage());
 							}
 						}
 					});
 				} catch (Exception e) {
-					Log.e(NSR.TAG, e.getMessage());
+					NSRLog.e(NSR.TAG, e.getMessage());
 				}
 			}
 		});

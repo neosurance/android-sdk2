@@ -1,7 +1,6 @@
 package eu.neosurance.sdk;
 
 import android.location.Location;
-import android.util.Log;
 
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationResult;
@@ -23,17 +22,17 @@ public class NSRLocationCallback extends LocationCallback {
 		nsr.checkHardTraceLocation();
 		try {
 			Location lastLocation = locationResult.getLastLocation();
-			Log.d(NSR.TAG, "NSRLocationCallback: " + lastLocation);
-			Log.d(NSR.TAG, "NSRLocationCallback sending");
+			NSRLog.d(NSR.TAG, "NSRLocationCallback: " + lastLocation);
+			NSRLog.d(NSR.TAG, "NSRLocationCallback sending");
 			JSONObject payload = new JSONObject();
 			payload.put("latitude", lastLocation.getLatitude());
 			payload.put("longitude", lastLocation.getLongitude());
 			payload.put("altitude", lastLocation.getAltitude());
 			nsr.crunchEvent("position", payload);
 			nsr.setStillLocationSent(false);
-			Log.d(NSR.TAG, "NSRLocationCallback sent");
+			NSRLog.d(NSR.TAG, "NSRLocationCallback sent");
 		} catch (Exception e) {
-			Log.e(NSR.TAG, "NSRLocationCallback", e);
+			NSRLog.e(NSR.TAG, "NSRLocationCallback", e);
 		}
 	}
 }

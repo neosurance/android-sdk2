@@ -1,8 +1,5 @@
 package eu.neosurance.sdk;
 
-
-import android.util.Log;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -245,7 +242,7 @@ public class NSRUser {
 				jsonObject.put("locals", locals);
 			}
 		} catch (JSONException e) {
-			Log.e(NSR.TAG, "toJsonObject", e);
+			NSRLog.e(NSR.TAG, "toJsonObject", e);
 		}
 		return jsonObject;
 	}

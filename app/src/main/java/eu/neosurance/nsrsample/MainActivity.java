@@ -90,10 +90,10 @@ public class MainActivity extends AppCompatActivity {
 		try {
 			Log.d(TAG, "registerUser");
 			NSRUser user = new NSRUser();
-			user.setEmail("AE.testANDROID@neosurance.eu");
-			user.setCode("AE.testANDROID@neosurance.eu");
-			user.setFirstname("testANDROID");
-			user.setLastname("testANDROID");
+			user.setEmail("<user>@neosurance.eu");
+			user.setCode("<user>@neosurance.eu");
+			user.setFirstname("<user>");
+			user.setLastname("<user>");
 
 			NSR.getInstance(this).registerUser(user);
 		} catch (Exception e) {
@@ -129,9 +129,11 @@ public class MainActivity extends AppCompatActivity {
 		Log.d(TAG, "setup");
 		try {
 			JSONObject settings = new JSONObject();
+
+			settings.put("disable_log", false);
 			settings.put("base_url", "https://sandbox.neosurancecloud.net/sdk/api/v1.0/");
-			settings.put("code", "nsr");
-			settings.put("secret_key", "VI7bHkQ5JhG2TeYQYe");
+			settings.put("code", "<code>");
+			settings.put("secret_key", "<secret_key>");
 			settings.put("push_icon", R.drawable.king);
 			settings.put("ask_permission", 1);
 			settings.put("dev_mode", 1);

@@ -1,7 +1,6 @@
 package eu.neosurance.sdk;
 
 import android.annotation.SuppressLint;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.location.Address;
 import android.location.Geocoder;

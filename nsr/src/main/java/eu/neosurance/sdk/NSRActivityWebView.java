@@ -388,7 +388,7 @@ public class NSRActivityWebView extends AppCompatActivity {
 				} catch (Throwable e) {
 				}
 			}
-		}, 15 * 1000);
+		}, 15000);
 	}
 
 	public synchronized void finish() {

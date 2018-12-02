@@ -46,7 +46,7 @@ import java.util.TimeZone;
 
 public class NSR {
 	protected String getVersion() {
-		return "2.2.2";
+		return "2.2.3";
 	}
 
 	protected String getOs() {
@@ -111,19 +111,16 @@ public class NSR {
 						NSRLog.d(TAG, "making securityDelegate... NSRDefaultSecurity");
 						instance.setSecurityDelegate(new NSRDefaultSecurity());
 					}
-
 					s = instance.getData("workflowDelegateClass");
 					if (s != null) {
 						NSRLog.d(TAG, "making workflowDelegate... " + s);
 						instance.setWorkflowDelegate((NSRWorkflowDelegate) Class.forName(s).newInstance());
 					}
-
 					s = instance.getData("pushDelegateClass");
 					if (s != null) {
 						NSRLog.d(TAG, "making pushDelegateClass... " + s);
 						instance.setPushDelegate((NSRPushDelegate) Class.forName(s).newInstance());
 					}
-
 					instance.initJob();
 				} catch (Exception e) {
 					NSRLog.e(TAG, "getInstance", e);
@@ -611,7 +608,7 @@ public class NSR {
 		}
 		NSRLog.d(TAG, "registerUser");
 		try {
-			forgetUser();
+			setAuth(null);
 			setUser(user);
 			authorize(new NSRAuth() {
 				public void authorized(boolean authorized) throws Exception {

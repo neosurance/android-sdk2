@@ -70,8 +70,11 @@ public class NSREventWebView {
 	protected void eval(final String code) {
 		new Handler(Looper.getMainLooper()).post(new Runnable() {
 			public void run() {
-				if (Build.VERSION.SDK_INT >= 21) {
-					webView.evaluateJavascript(code, null);
+				try {
+					if (webView != null && Build.VERSION.SDK_INT >= 21) {
+						webView.evaluateJavascript(code, null);
+					}
+				} catch (Throwable e) {
 				}
 			}
 		});

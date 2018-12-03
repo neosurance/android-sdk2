@@ -31,7 +31,7 @@ it, simply add the following line to your project:
 	```gradle
 	dependencies {
 		...
-		implementation 'com.github.neosurance:android-sdk2:2.2.3'
+		implementation 'com.github.neosurance:android-sdk2:2.2.4'
 	}
 	```
 

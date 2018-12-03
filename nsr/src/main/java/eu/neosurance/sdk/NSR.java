@@ -45,7 +45,7 @@ import java.util.TimeZone;
 
 public class NSR {
 	protected String getVersion() {
-		return "2.2.3";
+		return "2.2.4";
 	}
 
 	protected String getOs() {

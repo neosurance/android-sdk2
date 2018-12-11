@@ -45,7 +45,7 @@ import java.util.TimeZone;
 
 public class NSR {
 	protected String getVersion() {
-		return "2.2.4";
+		return "2.2.5";
 	}
 
 	protected String getOs() {
@@ -60,7 +60,7 @@ public class NSR {
 	protected static final int REQUEST_IMAGE_CAPTURE = 0x1702;
 
 	private static NSR instance = null;
-	private Context ctx = null;
+	protected Context ctx = null;
 	private NSREventWebView eventWebView = null;
 
 	private NSRSecurityDelegate securityDelegate = null;
@@ -194,23 +194,21 @@ public class NSR {
 	protected void traceLocation() {
 		NSRLog.d(TAG, "traceLocation");
 		try {
+			JSONObject conf = getConf();
 			boolean fine = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
 			boolean coarse = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-			if (coarse || fine) {
-				JSONObject conf = getConf();
-				if (conf != null && getBoolean(conf.getJSONObject("position"), "enabled")) {
-					initLocation();
-					long time = conf.getLong("time") * 1000;
-					float meters = (float) conf.getJSONObject("position").getDouble("meters");
-					LocationRequest locationRequest = LocationRequest.create();
-					locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-					locationRequest.setFastestInterval(time / 3);
-					locationRequest.setInterval(time);
-					locationRequest.setSmallestDisplacement(meters);
-					NSRLog.d(TAG, "requestLocationUpdates");
-					locationCallback = new NSRLocationCallback(this);
-					locationClient.requestLocationUpdates(locationRequest, locationCallback, null);
-				}
+			if ((coarse || fine) && conf != null && getBoolean(conf.getJSONObject("position"), "enabled")) {
+				initLocation();
+				long time = conf.getLong("time") * 1000;
+				float meters = (float) conf.getJSONObject("position").getDouble("meters");
+				LocationRequest locationRequest = LocationRequest.create();
+				locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+				locationRequest.setFastestInterval(time / 3);
+				locationRequest.setInterval(time);
+				locationRequest.setSmallestDisplacement(meters);
+				NSRLog.d(TAG, "requestLocationUpdates");
+				locationCallback = new NSRLocationCallback(this, null, false);
+				locationClient.requestLocationUpdates(locationRequest, locationCallback, null);
 			}
 		} catch (JSONException e) {
 			NSRLog.e(TAG, "traceLocation", e);
@@ -220,20 +218,15 @@ public class NSR {
 	protected void hardTraceLocation() {
 		NSRLog.d(TAG, "hardTraceLocation");
 		try {
+			JSONObject conf = getConf();
 			boolean fine = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
 			boolean coarse = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-			if (coarse || fine) {
-				JSONObject conf = getConf();
-				if (conf != null && getBoolean(conf.getJSONObject("position"), "enabled")) {
-					if (isHardTraceLocation()) {
-						initHardLocation();
-						hardLocationCallback = new NSRLocationCallback(this);
-						hardLocationClient.requestLocationUpdates(makeHardLocationRequest(getHardTraceMeters()), hardLocationCallback, null);
-						NSRLog.d(TAG, "hardTraceLocation reactivated");
-					}
-				} else {
-					stopHardTraceLocation();
-					setHardTraceEnd(0);
+			if (coarse || fine && conf != null && getBoolean(conf.getJSONObject("position"), "enabled")) {
+				if (isHardTraceLocation()) {
+					initHardLocation();
+					hardLocationCallback = new NSRLocationCallback(this, null, false);
+					hardLocationClient.requestLocationUpdates(makeHardLocationRequest(getHardTraceMeters()), hardLocationCallback, null);
+					NSRLog.d(TAG, "hardTraceLocation reactivated");
 				}
 			}
 		} catch (JSONException e) {
@@ -269,22 +262,21 @@ public class NSR {
 	public void accurateLocation(double meters, int duration, boolean extend) {
 		NSRLog.i(TAG, "accurateLocation >>>>");
 		try {
+			JSONObject conf = getConf();
 			boolean fine = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
 			boolean coarse = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-			if (coarse || fine) {
-				JSONObject conf = getConf();
-				if (conf != null && getBoolean(conf.getJSONObject("position"), "enabled")) {
-					NSRLog.i(TAG, "accurateLocation");
-					initHardLocation();
-					if (!isHardTraceLocation() || meters != getHardTraceMeters()) {
-						setHardTraceMeters(meters);
-						setHardTraceEnd((int) (System.currentTimeMillis() / 1000) + duration);
-						hardLocationCallback = new NSRLocationCallback(this);
-						hardLocationClient.requestLocationUpdates(makeHardLocationRequest((float) meters), hardLocationCallback, null);
-					}
-					if (extend) {
-						setHardTraceEnd((int) (System.currentTimeMillis() / 1000) + duration);
-					}
+			if ((coarse || fine) && conf != null && getBoolean(conf.getJSONObject("position"), "enabled")) {
+				NSRLog.i(TAG, "accurateLocation");
+				initHardLocation();
+				if (!isHardTraceLocation() || meters != getHardTraceMeters()) {
+					stopHardTraceLocation();
+					setHardTraceMeters(meters);
+					setHardTraceEnd((int) (System.currentTimeMillis() / 1000) + duration);
+					hardLocationCallback = new NSRLocationCallback(this, null, false);
+					hardLocationClient.requestLocationUpdates(makeHardLocationRequest((float) meters), hardLocationCallback, null);
+				}
+				if (extend) {
+					setHardTraceEnd((int) (System.currentTimeMillis() / 1000) + duration);
 				}
 			}
 		} catch (JSONException e) {
@@ -299,7 +291,6 @@ public class NSR {
 	}
 
 	protected void checkHardTraceLocation() {
-		int hte = getHardTraceEnd();
 		if (!isHardTraceLocation()) {
 			stopHardTraceLocation();
 			setHardTraceEnd(0);
@@ -336,7 +327,6 @@ public class NSR {
 	protected void setHardTraceMeters(double hardTraceMeters) {
 		setData("hardTraceMeters", "" + hardTraceMeters);
 	}
-
 
 	protected synchronized void stopTraceLocation() {
 		if (locationClient != null && locationCallback != null) {
@@ -763,25 +753,26 @@ public class NSR {
 	}
 
 	public void crunchEvent(final String event, final JSONObject payload) {
-		if (!localCrunchEvent(event, payload)) {
-			sendEvent(event, payload);
+		if (gracefulDegradate()) {
+			return;
 		}
-	}
-
-	protected boolean localCrunchEvent(final String event, final JSONObject payload) {
 		JSONObject conf = getConf();
 		if (getBoolean(conf, "local_tracking")) {
 			NSRLog.d(NSR.TAG, "crunchEvent: " + event + " payload: " + payload.toString());
 			snapshot(event, payload);
-			if (eventWebView == null) {
-				NSRLog.d(NSR.TAG, "crunchEvent Making NSREventWebView");
-				eventWebView = new NSREventWebView(ctx, this);
-			}
-			NSRLog.d(NSR.TAG, "crunchEvent call eventWebView");
-			eventWebView.crunchEvent(event, payload);
-			return true;
+			localCrunchEvent(event, payload);
+		} else {
+			sendEvent(event, payload);
 		}
-		return false;
+	}
+
+	private void localCrunchEvent(final String event, final JSONObject payload) {
+		if (eventWebView == null) {
+			NSRLog.d(NSR.TAG, "localCrunchEvent Making NSREventWebView");
+			eventWebView = new NSREventWebView(ctx, this);
+		}
+		NSRLog.d(NSR.TAG, "localCrunchEvent call eventWebView");
+		eventWebView.crunchEvent(event, payload);
 	}
 
 	public void sendEvent(final String event, final JSONObject payload) {
@@ -965,19 +956,18 @@ public class NSR {
 		}
 	}
 
-
 	protected void showPush(String pid, final JSONObject push, int delay) {
-		if (Build.VERSION.SDK_INT >= 24) {
+		if (Build.VERSION.SDK_INT >= 21) {
 			Intent intent = new Intent(ctx, NSRDelayedPush.class);
 			intent.putExtra("push", push.toString());
 			PendingIntent pushIntent = PendingIntent.getBroadcast(ctx, pid.hashCode(), intent, PendingIntent.FLAG_ONE_SHOT);
-			ctx.getSystemService(AlarmManager.class).setExact(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime() + delay * 1000, pushIntent);
+			((AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE)).setExact(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime() + delay * 1000, pushIntent);
 		}
 	}
 
 	protected void killPush(String pid) {
-		if (Build.VERSION.SDK_INT >= 24) {
-			ctx.getSystemService(AlarmManager.class).cancel(PendingIntent.getBroadcast(ctx, pid.hashCode(), new Intent(ctx, NSRDelayedPush.class), PendingIntent.FLAG_ONE_SHOT));
+		if (Build.VERSION.SDK_INT >= 21) {
+			((AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE)).cancel(PendingIntent.getBroadcast(ctx, pid.hashCode(), new Intent(ctx, NSRDelayedPush.class), PendingIntent.FLAG_ONE_SHOT));
 		}
 	}
 
@@ -986,9 +976,8 @@ public class NSR {
 			return;
 		}
 		try {
-
 			if (Build.VERSION.SDK_INT >= 26) {
-				NotificationManager notificationManager = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+				NotificationManager notificationManager = ctx.getSystemService(NotificationManager.class);
 				NotificationChannel channel = notificationManager.getNotificationChannel(CHANNEL_ID);
 				if (channel == null) {
 					channel = new NotificationChannel(CHANNEL_ID, CHANNEL_ID, NotificationManager.IMPORTANCE_HIGH);
@@ -1003,11 +992,14 @@ public class NSR {
 			} catch (Exception e) {
 				notification.setSmallIcon(R.drawable.nsr_logo);
 			}
-			notification.setContentTitle(push.getString("title"));
+			if (push.has("title") && push.getString("title").trim() != "") {
+				notification.setContentTitle(push.getString("title"));
+			}
 			notification.setContentText(push.getString("body"));
 			notification.setStyle(new NotificationCompat.BigTextStyle().bigText(push.getString("body")));
 			notification.setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
 			notification.setPriority(NotificationCompat.PRIORITY_HIGH);
+
 			notification.setAutoCancel(true);
 			String url = push.has("url") ? push.getString("url") : null;
 			PendingIntent pendingIntent = null;

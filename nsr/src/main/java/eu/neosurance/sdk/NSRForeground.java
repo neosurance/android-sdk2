@@ -1,11 +1,12 @@
 package eu.neosurance.sdk;
 
+import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 
@@ -21,15 +22,31 @@ public class NSRForeground extends Service {
 		super.onCreate();
 		NSRLog.d(NSR.TAG, "NSRForeground onCreate");
 		if (Build.VERSION.SDK_INT >= 26) {
-			NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-			NotificationChannel channel = new NotificationChannel(SILENT_ID, SILENT_ID, NotificationManager.IMPORTANCE_NONE);
-			channel.setSound(null, null);
-			notificationManager.createNotificationChannel(channel);
+			final NotificationManager notificationManager = getSystemService(NotificationManager.class);
 			NotificationCompat.Builder notification = new NotificationCompat.Builder(this, SILENT_ID);
 			notification.setSound(null);
-			notification.setPriority(NotificationCompat.PRIORITY_MIN);
-			startForeground(1, notification.build());
-			notificationManager.deleteNotificationChannel(SILENT_ID);
+			try {
+				notification.setSmallIcon(NSR.getInstance(this).getSettings().getInt("push_icon"));
+			} catch (Exception e) {
+				notification.setSmallIcon(R.drawable.nsr_logo);
+			}
+			Notification n = notification.build();
+			int id = (int) System.currentTimeMillis() / 1000;
+
+			NotificationChannel channel = new NotificationChannel(SILENT_ID, SILENT_ID, NotificationManager.IMPORTANCE_LOW);
+			channel.setSound(null, null);
+			notificationManager.createNotificationChannel(channel);
+			startForeground(id, n);
+//			if (Build.VERSION.SDK_INT >= 27) {
+//				new Handler().postDelayed(new Runnable() {
+//					public void run() {
+//						notificationManager.deleteNotificationChannel(SILENT_ID);
+//					}
+//				}, 10);
+//				NSRLog.d(NSR.TAG, "NSRForeground delayed 10");
+//			} else {
+//				notificationManager.deleteNotificationChannel(SILENT_ID);
+//			}
 		}
 	}
 
@@ -37,4 +54,5 @@ public class NSRForeground extends Service {
 	public IBinder onBind(Intent intent) {
 		return null;
 	}
+
 }

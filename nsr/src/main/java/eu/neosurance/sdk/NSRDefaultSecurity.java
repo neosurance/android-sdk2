@@ -3,8 +3,6 @@ package eu.neosurance.sdk;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
 import android.support.annotation.RequiresApi;
 
 import org.json.JSONObject;
@@ -32,7 +30,7 @@ public class NSRDefaultSecurity implements NSRSecurityDelegate {
 		private JSONObject headers;
 		private NSRSecurityResponse completionHandler;
 
-		public AsynchRequest(String url, JSONObject payload, JSONObject headers, NSRSecurityResponse completionHandler) {
+		public AsynchRequest(final String url, final JSONObject payload, final JSONObject headers, final NSRSecurityResponse completionHandler) {
 			this.url = url;
 			this.payload = payload;
 			this.headers = headers;
@@ -44,7 +42,7 @@ public class NSRDefaultSecurity implements NSRSecurityDelegate {
 			try {
 				httpRunner = new NSRHttpRunner(url);
 				if (payload != null)
-					httpRunner.payload(payload.toString(), "application/json;charset=UTF-8");
+					httpRunner.payload(payload.toString(), "application/json");
 
 				if (headers != null) {
 					Iterator<String> keys = headers.keys();
@@ -53,15 +51,17 @@ public class NSRDefaultSecurity implements NSRSecurityDelegate {
 						httpRunner.header(key, headers.getString(key));
 					}
 				}
-				completionHandler.completionHandler(new JSONObject(httpRunner.read()), null);
+				String response = httpRunner.read();
+				NSRLog.d(NSR.TAG, "NSRDefaultSecurity response:" + response);
+				completionHandler.completionHandler(new JSONObject(response), null);
 			} catch (Exception e) {
 				try {
 					if (httpRunner != null) {
-						NSRLog.e(NSR.TAG, httpRunner.getMessage());
+						NSRLog.e(NSR.TAG, "MSG:" + httpRunner.getMessage());
 					}
 					completionHandler.completionHandler(null, e.toString());
 				} catch (Exception ee) {
-					NSRLog.e(NSR.TAG, ee.getMessage());
+					NSRLog.e(NSR.TAG, ee.toString());
 				}
 			}
 			return null;

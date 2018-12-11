@@ -185,14 +185,14 @@ public class NSRHttpRunner {
 				sb.append(param[0]).append("=").append(URLEncoder.encode(param[1], charset)).append("&");
 			postData = sb.toString();
 		}
-
 		connection.setRequestMethod("POST");
 		connection.setDoOutput(true);
 		connection.setDoInput(true);
 		connection.setRequestProperty("Content-Type", contentType() + "; charset=" + charset);
-		connection.setRequestProperty("Content-Length", "" + Integer.toString(postData.length()));
+		byte[] postBytes = postData.getBytes(charset);
+		connection.setRequestProperty("Content-Length", "" + postBytes.length);
 		try (OutputStream output = connection.getOutputStream()) {
-			output.write(postData.getBytes(charset));
+			output.write(postBytes);
 			output.flush();
 		}
 	}
@@ -320,7 +320,8 @@ public class NSRHttpRunner {
 	private void copy(InputStream from, OutputStream to) throws Exception {
 		byte[] bytes = new byte[4096];
 		int len;
-		while ((len = from.read(bytes)) >= 0)
+		while ((len = from.read(bytes)) >= 0) {
 			to.write(bytes, 0, len);
+		}
 	}
 }

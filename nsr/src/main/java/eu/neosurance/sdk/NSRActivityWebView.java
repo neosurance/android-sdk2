@@ -74,7 +74,7 @@ public class NSRActivityWebView extends AppCompatActivity {
 						startActivity(intent);
 					} else {
 						Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-						startActivity( intent );
+						startActivity(intent);
 					}
 					return true;
 				}
@@ -346,22 +346,22 @@ public class NSRActivityWebView extends AppCompatActivity {
 			locationRequest.setInterval(0);
 			locationRequest.setNumUpdates(1);
 			locationClient.requestLocationUpdates(locationRequest,
-				new LocationCallback() {
-					public void onLocationResult(LocationResult locationResult) {
-						Location location = locationResult.getLastLocation();
-						if (location != null) {
-							locationClient.removeLocationUpdates(this);
-							try {
-								JSONObject locationAsJson = new JSONObject();
-								locationAsJson.put("latitude", location.getLatitude());
-								locationAsJson.put("longitude", location.getLongitude());
-								locationAsJson.put("altitude", location.getAltitude());
-								eval(callBack + "(" + locationAsJson.toString() + ")");
-							} catch (JSONException e) {
-							}
-						}
-					}
-				}, null);
+							new LocationCallback() {
+								public void onLocationResult(LocationResult locationResult) {
+									Location location = locationResult.getLastLocation();
+									if (location != null) {
+										locationClient.removeLocationUpdates(this);
+										try {
+											JSONObject locationAsJson = new JSONObject();
+											locationAsJson.put("latitude", location.getLatitude());
+											locationAsJson.put("longitude", location.getLongitude());
+											locationAsJson.put("altitude", location.getAltitude());
+											eval(callBack + "(" + locationAsJson.toString() + ")");
+										} catch (JSONException e) {
+										}
+									}
+								}
+							}, null);
 		} else {
 			List<String> permissionsList = new ArrayList<String>();
 			permissionsList.add(Manifest.permission.ACCESS_FINE_LOCATION);

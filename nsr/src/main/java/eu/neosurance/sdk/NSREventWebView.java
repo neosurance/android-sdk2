@@ -39,7 +39,7 @@ public class NSREventWebView {
 					webView.getSettings().setAllowFileAccessFromFileURLs(true);
 					webView.getSettings().setAllowUniversalAccessFromFileURLs(true);
 					webView.getSettings().setDomStorageEnabled(true);
-					webView.loadUrl("file:///android_asset/eventCrucher.html?ns_lang=" + nsr.getLang() + "&ns_log=" + nsr.isLogEnabled());
+					webView.loadUrl("file:///android_asset/eventCruncher.html?ns_lang=" + nsr.getLang() + "&ns_log=" + nsr.isLogEnabled());
 				}
 			});
 		} catch (Exception e) {

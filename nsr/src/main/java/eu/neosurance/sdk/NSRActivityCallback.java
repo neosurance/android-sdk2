@@ -5,16 +5,13 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.location.Location;
 import android.os.Looper;
 import android.support.v4.app.ActivityCompat;
 
 import com.google.android.gms.location.ActivityRecognitionResult;
 import com.google.android.gms.location.DetectedActivity;
 import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 
 import org.json.JSONObject;
@@ -82,26 +79,7 @@ public class NSRActivityCallback extends BroadcastReceiver {
 							locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 							locationRequest.setInterval(0);
 							locationRequest.setNumUpdates(1);
-							locationClient.requestLocationUpdates(locationRequest,
-								new LocationCallback() {
-									public void onLocationResult(LocationResult locationResult) {
-										NSRLog.d(NSR.TAG, "StillLocation onLocationResult");
-										Location lastLocation = locationResult.getLastLocation();
-										if (lastLocation != null) {
-											locationClient.removeLocationUpdates(this);
-											try {
-												JSONObject payload = new JSONObject();
-												payload.put("latitude", lastLocation.getLatitude());
-												payload.put("longitude", lastLocation.getLongitude());
-												payload.put("altitude", lastLocation.getAltitude());
-												NSRLog.d(NSR.TAG, "StillLocation: " + payload);
-												nsr.crunchEvent("position", payload);
-												nsr.setStillLocationSent(true);
-											} catch (Exception e) {
-											}
-										}
-									}
-								}, Looper.getMainLooper());
+							locationClient.requestLocationUpdates(locationRequest, new NSRLocationCallback(nsr, locationClient, true), Looper.getMainLooper());
 						}
 					}
 				}

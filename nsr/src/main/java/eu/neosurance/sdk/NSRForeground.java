@@ -37,16 +37,6 @@ public class NSRForeground extends Service {
 			channel.setSound(null, null);
 			notificationManager.createNotificationChannel(channel);
 			startForeground(id, n);
-//			if (Build.VERSION.SDK_INT >= 27) {
-//				new Handler().postDelayed(new Runnable() {
-//					public void run() {
-//						notificationManager.deleteNotificationChannel(SILENT_ID);
-//					}
-//				}, 10);
-//				NSRLog.d(NSR.TAG, "NSRForeground delayed 10");
-//			} else {
-//				notificationManager.deleteNotificationChannel(SILENT_ID);
-//			}
 		}
 	}
 

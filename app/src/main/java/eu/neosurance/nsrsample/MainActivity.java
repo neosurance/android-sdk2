@@ -11,29 +11,37 @@ import android.webkit.WebView;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Properties;
+
 import eu.neosurance.sdk.NSR;
 import eu.neosurance.sdk.NSRUser;
 
 public class MainActivity extends AppCompatActivity {
 	public final static String TAG = "NSRSample";
 	private WebView mainView;
+	private Properties config;
 
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		try {
+			config = new Properties();
+			config.load(this.getAssets().open("config.properties"));
 
-		WebView.setWebContentsDebuggingEnabled(true);
-		mainView = new WebView(this);
-		mainView.getSettings().setJavaScriptEnabled(true);
-		mainView.getSettings().setDomStorageEnabled(true);
-		mainView.getSettings().setAllowFileAccessFromFileURLs(true);
-		mainView.getSettings().setAllowUniversalAccessFromFileURLs(true);
-		mainView.addJavascriptInterface(this, "app");
-		mainView.setOverScrollMode(WebView.OVER_SCROLL_NEVER);
+			WebView.setWebContentsDebuggingEnabled(true);
+			mainView = new WebView(this);
+			mainView.getSettings().setJavaScriptEnabled(true);
+			mainView.getSettings().setDomStorageEnabled(true);
+			mainView.getSettings().setAllowFileAccessFromFileURLs(true);
+			mainView.getSettings().setAllowUniversalAccessFromFileURLs(true);
+			mainView.addJavascriptInterface(this, "app");
+			mainView.setOverScrollMode(WebView.OVER_SCROLL_NEVER);
 
-		setContentView(mainView);
-		mainView.loadUrl("file:///android_asset/sample.html");
+			setContentView(mainView);
+			mainView.loadUrl("file:///android_asset/sample.html");
 
-		setup();
+			setup();
+		} catch (Exception e) {
+		}
 	}
 
 	protected void eval(final String code) {
@@ -65,6 +73,9 @@ public class MainActivity extends AppCompatActivity {
 				if ("sendEvent".equals(what)) {
 					sendEvent();
 				}
+				if ("crunchEvent".equals(what)) {
+					crunchEvent();
+				}
 				if ("appLogin".equals(what)) {
 					appLogin();
 				}
@@ -90,10 +101,10 @@ public class MainActivity extends AppCompatActivity {
 		try {
 			Log.d(TAG, "registerUser");
 			NSRUser user = new NSRUser();
-			user.setEmail("<user>@neosurance.eu");
-			user.setCode("<user>@neosurance.eu");
-			user.setFirstname("<user>");
-			user.setLastname("<user>");
+			user.setEmail(config.getProperty("user.email"));
+			user.setCode(config.getProperty("user.code"));
+			user.setFirstname(config.getProperty("user.firstname"));
+			user.setLastname(config.getProperty("user.lastname"));
 
 			NSR.getInstance(this).registerUser(user);
 		} catch (Exception e) {
@@ -109,14 +120,23 @@ public class MainActivity extends AppCompatActivity {
 		try {
 			Log.d(TAG, "sendEvent");
 			JSONObject payload = new JSONObject();
-			payload.put("fromCode", "IT");
-			payload.put("fromCountry", "italia");
-			payload.put("toCode", "FR");
-			payload.put("toCountry", "francia");
-			payload.put("fake", 1);
-			NSR.getInstance(this).sendEvent("countryChange", payload);
+			payload.put("iata", "LIN");
+			NSR.getInstance(this).sendEvent("inAirport", payload);
 		} catch (Exception e) {
 			Log.e(TAG, "sendEvent", e);
+		}
+	}
+
+	public void crunchEvent() {
+		try {
+			Log.d(TAG, "crunchEvent");
+			JSONObject payload = new JSONObject();
+			payload.put("latitude", 51.16135787);
+			payload.put("longitude", -0.17700102);
+			;
+			NSR.getInstance(this).crunchEvent("position", payload);
+		} catch (Exception e) {
+			Log.e(TAG, "crunchEvent", e);
 		}
 	}
 
@@ -131,9 +151,9 @@ public class MainActivity extends AppCompatActivity {
 			JSONObject settings = new JSONObject();
 
 			settings.put("disable_log", false);
-			settings.put("base_url", "https://sandbox.neosurancecloud.net/sdk/api/v1.0/");
-			settings.put("code", "<code>");
-			settings.put("secret_key", "<secret_key>");
+			settings.put("base_url", config.getProperty("base_url"));
+			settings.put("code", config.getProperty("code"));
+			settings.put("secret_key", config.getProperty("secret_key"));
 			settings.put("push_icon", R.drawable.king);
 			settings.put("ask_permission", 1);
 			settings.put("dev_mode", 1);

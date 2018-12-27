@@ -19,6 +19,7 @@
 		</receiver>
 		<receiver android:name="eu.neosurance.sdk.NSRActivityCallback" />
 		<receiver android:name="eu.neosurance.sdk.NSRDelayedPush" />
+		<receiver android:name="eu.neosurance.sdk.NSRBck" />
 
 		<service
 			android:name="eu.neosurance.sdk.NSRForeground"

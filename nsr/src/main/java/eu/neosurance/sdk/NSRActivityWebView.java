@@ -46,7 +46,6 @@ import java.util.Locale;
 public class NSRActivityWebView extends AppCompatActivity {
 	private WebView webView;
 	private String photoCallback;
-	private FusedLocationProviderClient locationClient = null;
 	private NSR nsr;
 
 	@SuppressLint("SetJavaScriptEnabled")
@@ -329,18 +328,11 @@ public class NSRActivityWebView extends AppCompatActivity {
 		}
 	}
 
-	private synchronized void initLocation() {
-		if (locationClient == null) {
-			NSRLog.d(NSR.TAG, "NSRActivityWebView initLocation");
-			locationClient = LocationServices.getFusedLocationProviderClient(this);
-		}
-	}
-
 	private void getLocation(final String callBack) {
 		boolean fine = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
 		boolean coarse = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
 		if (coarse || fine) {
-			initLocation();
+			final FusedLocationProviderClient locationClient = LocationServices.getFusedLocationProviderClient(this);
 			LocationRequest locationRequest = LocationRequest.create();
 			locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 			locationRequest.setInterval(0);

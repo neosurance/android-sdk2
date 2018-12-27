@@ -11,12 +11,10 @@ import org.json.JSONObject;
 public class NSRLocationCallback extends LocationCallback {
 	private NSR nsr;
 	private FusedLocationProviderClient locationClient;
-	private boolean stillLocationSent;
 
-	public NSRLocationCallback(NSR nsr, FusedLocationProviderClient locationClient, boolean stillLocationSent) {
+	public NSRLocationCallback(NSR nsr, FusedLocationProviderClient locationClient) {
 		this.nsr = nsr;
 		this.locationClient = locationClient;
-		this.stillLocationSent = stillLocationSent;
 	}
 
 	public void onLocationResult(LocationResult locationResult) {
@@ -32,14 +30,19 @@ public class NSRLocationCallback extends LocationCallback {
 					locationClient.removeLocationUpdates(this);
 				}
 				NSRLog.d(NSR.TAG, "NSRLocationCallback: " + lastLocation);
-				NSRLog.d(NSR.TAG, "NSRLocationCallback sending");
-				JSONObject payload = new JSONObject();
-				payload.put("latitude", lastLocation.getLatitude());
-				payload.put("longitude", lastLocation.getLongitude());
-				payload.put("altitude", lastLocation.getAltitude());
-				nsr.crunchEvent("position", payload);
-				nsr.setStillLocationSent(stillLocationSent);
-				NSRLog.d(NSR.TAG, "NSRLocationCallback sent");
+				String bckLoc = lastLocation.getLatitude() + "|" + lastLocation.getLongitude();
+				if (!bckLoc.equals(nsr.getBckLoc())) {
+					nsr.setBckLoc(bckLoc);
+					NSRLog.d(NSR.TAG, "NSRLocationCallback sending");
+					JSONObject payload = new JSONObject();
+					payload.put("latitude", lastLocation.getLatitude());
+					payload.put("longitude", lastLocation.getLongitude());
+					payload.put("altitude", lastLocation.getAltitude());
+					nsr.crunchEvent("position", payload);
+					NSRLog.d(NSR.TAG, "NSRLocationCallback sent");
+				} else {
+					NSRLog.d(NSR.TAG, "NSRLocationCallback already sent: " + bckLoc);
+				}
 			} catch (Exception e) {
 				NSRLog.e(NSR.TAG, "NSRLocationCallback", e);
 			}

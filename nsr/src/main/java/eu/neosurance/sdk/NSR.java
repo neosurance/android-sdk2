@@ -45,7 +45,7 @@ import java.util.TimeZone;
 
 public class NSR {
 	protected String getVersion() {
-		return "2.2.5";
+		return "2.2.6";
 	}
 
 	protected String getOs() {
@@ -69,18 +69,24 @@ public class NSR {
 
 	private NSRActivityWebView activityWebView = null;
 
-	private FusedLocationProviderClient locationClient = null;
-	private NSRLocationCallback locationCallback = null;
-
 	private FusedLocationProviderClient hardLocationClient = null;
 	private NSRLocationCallback hardLocationCallback = null;
 	private Intent foregrounder = null;
 
 	private ActivityRecognitionClient activityClient = null;
 	private PendingIntent activityIntent = null;
-	private boolean stillLocationSent = false;
 
-	private NSR(Context ctx) {
+	private String bckLoc = null;
+
+	public String getBckLoc() {
+		return bckLoc;
+	}
+
+	protected void setBckLoc(String bckLoc) {
+		this.bckLoc = bckLoc;
+	}
+
+	protected NSR(Context ctx) {
 		this.ctx = ctx;
 	}
 
@@ -131,11 +137,19 @@ public class NSR {
 		return instance;
 	}
 
+	protected void initBck(int delay) {
+		if (Build.VERSION.SDK_INT >= 21) {
+			NSRLog.d(TAG, "initBck....");
+			PendingIntent pendingIntent = PendingIntent.getBroadcast(ctx, 1, new Intent(ctx, NSRBck.class), PendingIntent.FLAG_UPDATE_CURRENT);
+			((AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE)).setExact(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime() + delay * 1000, pendingIntent);
+			NSRLog.d(TAG, "initBck in " + delay);
+		}
+	}
+
 	private void initJob() {
 		NSRLog.d(TAG, "initJob");
 		try {
 			stopHardTraceLocation();
-			stopTraceLocation();
 			stopTraceActivity();
 			if (!synchEventWebView()) {
 				continueInitJob();
@@ -177,13 +191,6 @@ public class NSR {
 		return (oldConf == null) || !oldConf.toString().equals(conf.toString()) || (eventWebView == null && getBoolean(conf, "local_tracking"));
 	}
 
-	private synchronized void initLocation() {
-		if (locationClient == null) {
-			NSRLog.d(TAG, "initLocation");
-			locationClient = LocationServices.getFusedLocationProviderClient(ctx);
-		}
-	}
-
 	private synchronized void initHardLocation() {
 		if (hardLocationClient == null) {
 			NSRLog.d(TAG, "initHardLocation");
@@ -198,17 +205,7 @@ public class NSR {
 			boolean fine = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
 			boolean coarse = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
 			if ((coarse || fine) && conf != null && getBoolean(conf.getJSONObject("position"), "enabled")) {
-				initLocation();
-				long time = conf.getLong("time") * 1000;
-				float meters = (float) conf.getJSONObject("position").getDouble("meters");
-				LocationRequest locationRequest = LocationRequest.create();
-				locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-				locationRequest.setFastestInterval(time / 3);
-				locationRequest.setInterval(time);
-				locationRequest.setSmallestDisplacement(meters);
-				NSRLog.d(TAG, "requestLocationUpdates");
-				locationCallback = new NSRLocationCallback(this, null, false);
-				locationClient.requestLocationUpdates(locationRequest, locationCallback, null);
+				initBck(3);
 			}
 		} catch (JSONException e) {
 			NSRLog.e(TAG, "traceLocation", e);
@@ -224,7 +221,7 @@ public class NSR {
 			if (coarse || fine && conf != null && getBoolean(conf.getJSONObject("position"), "enabled")) {
 				if (isHardTraceLocation()) {
 					initHardLocation();
-					hardLocationCallback = new NSRLocationCallback(this, null, false);
+					hardLocationCallback = new NSRLocationCallback(this, null);
 					hardLocationClient.requestLocationUpdates(makeHardLocationRequest(getHardTraceMeters()), hardLocationCallback, null);
 					NSRLog.d(TAG, "hardTraceLocation reactivated");
 				}
@@ -272,7 +269,7 @@ public class NSR {
 					stopHardTraceLocation();
 					setHardTraceMeters(meters);
 					setHardTraceEnd((int) (System.currentTimeMillis() / 1000) + duration);
-					hardLocationCallback = new NSRLocationCallback(this, null, false);
+					hardLocationCallback = new NSRLocationCallback(this, null);
 					hardLocationClient.requestLocationUpdates(makeHardLocationRequest((float) meters), hardLocationCallback, null);
 				}
 				if (extend) {
@@ -326,22 +323,6 @@ public class NSR {
 
 	protected void setHardTraceMeters(double hardTraceMeters) {
 		setData("hardTraceMeters", "" + hardTraceMeters);
-	}
-
-	protected synchronized void stopTraceLocation() {
-		if (locationClient != null && locationCallback != null) {
-			NSRLog.d(TAG, "stopTraceLocation");
-			locationClient.removeLocationUpdates(locationCallback);
-			locationCallback = null;
-		}
-	}
-
-	protected boolean getStillLocationSent() {
-		return stillLocationSent;
-	}
-
-	protected void setStillLocationSent(boolean stillLocationSent) {
-		this.stillLocationSent = stillLocationSent;
 	}
 
 	private synchronized void initActivity() {

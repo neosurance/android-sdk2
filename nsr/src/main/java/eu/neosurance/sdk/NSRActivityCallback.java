@@ -1,18 +1,11 @@
 package eu.neosurance.sdk;
 
-import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.os.Looper;
-import android.support.v4.app.ActivityCompat;
 
 import com.google.android.gms.location.ActivityRecognitionResult;
 import com.google.android.gms.location.DetectedActivity;
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationServices;
 
 import org.json.JSONObject;
 
@@ -68,20 +61,6 @@ public class NSRActivityCallback extends BroadcastReceiver {
 					nsr.crunchEvent("activity", payload);
 					nsr.setLastActivity(candidate);
 					NSRLog.d(NSR.TAG, "NSRActivityCallback sent");
-
-					if (!nsr.getStillLocationSent() && "still".equals(candidate) && NSR.getBoolean(conf.getJSONObject("position"), "enabled")) {
-						NSRLog.d(NSR.TAG, "StillLocation");
-						boolean fine = ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-						boolean coarse = ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-						if (coarse || fine) {
-							final FusedLocationProviderClient locationClient = LocationServices.getFusedLocationProviderClient(context);
-							LocationRequest locationRequest = LocationRequest.create();
-							locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-							locationRequest.setInterval(0);
-							locationRequest.setNumUpdates(1);
-							locationClient.requestLocationUpdates(locationRequest, new NSRLocationCallback(nsr, locationClient, true), Looper.getMainLooper());
-						}
-					}
 				}
 			} catch (Exception e) {
 				NSRLog.e(NSR.TAG, "NSRActivityCallback", e);

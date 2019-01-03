@@ -102,7 +102,7 @@ it, simply add the following line to your project:
 		void secureRequest(Context ctx, String endpoint, JSONObject payload, JSONObject headers, NSRSecurityResponse completionHandler) throws Exception;
 	}
 	```
-	It's *mandatory* that your **securityDelegate** implements the **default constructor**.  
+	It's *mandatory* that your **securityDelegate** implements the **default constructor** and must be excluded from any obfuscation (Proguard).  
 	Then use the ***setSecurityDelegate*** method
 	
 	```java
@@ -121,7 +121,7 @@ it, simply add the following line to your project:
 	}
 	```
 	
-	It's *mandatory* that your **workflowDelegate** implements the **default constructor**.  
+	It's *mandatory* that your **workflowDelegate** implements the **default constructor** and must be excluded from any obfuscation (Proguard).  
 	Then use the ***setWorkflowDelegate*** method
 
 	```java
@@ -146,7 +146,7 @@ it, simply add the following line to your project:
 	```
 	The task of this delegate is to provide the **PendingIntent** associated with the push.  
 	The ***push*** parameter contains all the relevant informations.  
-	It's *mandatory* that your **pushDelegate** implements the **default constructor**.  
+	It's *mandatory* that your **pushDelegate** implements the **default constructor** and must be excluded from any obfuscation (Proguard).  
 	Then use the ***setPushDelegate*** method
 	
 	```java

@@ -31,7 +31,7 @@ it, simply add the following line to your project:
 	```gradle
 	dependencies {
 		...
-		implementation 'com.github.neosurance:android-sdk2:2.2.6'
+		implementation 'com.github.neosurance:android-sdk2:2.2.7'
 	}
 	```
 
@@ -70,6 +70,15 @@ it, simply add the following line to your project:
 		<item name="android:windowContentOverlay">@null</item>
 	</style>
 	```
+3. Inside your **proguard-rules.pro** be sure to have the following rules:
+	
+	```
+	-keep class eu.neosurance.sdk.** { *; }
+	-keep class * implements eu.neosurance.sdk.NSRSecurityDelegate { *; }
+	-keep class * implements eu.neosurance.sdk.NSRWorkflowDelegate { *; }
+	-keep class * implements eu.neosurance.sdk.NSRPushDelegate { *; }
+	```
+
 
 ## Use
 

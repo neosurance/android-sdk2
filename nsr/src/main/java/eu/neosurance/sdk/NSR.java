@@ -45,7 +45,7 @@ import java.util.TimeZone;
 
 public class NSR {
 	protected String getVersion() {
-		return "2.2.6";
+		return "2.2.7";
 	}
 
 	protected String getOs() {
@@ -129,6 +129,21 @@ public class NSR {
 					instance.initJob();
 				} catch (Exception e) {
 					NSRLog.e(TAG, "getInstance", e);
+					NSRLog.d(TAG, "makePristine....");
+					SharedPreferences.Editor editor = instance.getSharedPreferences().edit();
+					editor.remove("securityDelegateClass");
+					editor.remove("workflowDelegateClass");
+					editor.remove("pushDelegateClass");
+					editor.remove("conf");
+					editor.remove("settings");
+					editor.remove("user");
+					editor.remove("auth");
+					editor.remove("appURL");
+					editor.commit();
+					instance.stopHardTraceLocation();
+					instance.stopTraceActivity();
+					NSRLog.d(TAG, "pristine!");
+					instance.setSecurityDelegate(new NSRDefaultSecurity());
 				}
 			}
 		} else {

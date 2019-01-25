@@ -23,6 +23,7 @@ import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
+import android.util.Base64;
 
 import com.google.android.gms.location.ActivityRecognition;
 import com.google.android.gms.location.ActivityRecognitionClient;
@@ -37,20 +38,28 @@ import org.json.JSONObject;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+
 public class NSR {
 	protected String getVersion() {
-		return "2.2.7";
+		return "2.2.8";
 	}
 
 	protected String getOs() {
 		return "Android";
 	}
+
+	private final static byte[] K = Base64.decode("Ux44AGRuanL0y7qQDeasT3", Base64.NO_WRAP);
+	private final static byte[] I = Base64.decode("ycB4AGR7a0fhoFXbpoHy43", Base64.NO_WRAP);
 
 	private static final String CHANNEL_ID = "NSRNotification";
 	protected static final String PREFS_NAME = "NSRSDK";
@@ -1084,9 +1093,11 @@ public class NSR {
 
 	protected synchronized JSONObject snapshot(final String event, final JSONObject payload) {
 		JSONObject snapshot = snapshot();
-		try {
-			snapshot.put(event, payload);
-		} catch (Exception e) {
+		if (getBoolean(getConf(), "send_snapshot")) {
+			try {
+				snapshot.put(event, payload);
+			} catch (Exception e) {
+			}
 		}
 		setJSONData("snapshot", snapshot);
 		return snapshot;
@@ -1103,7 +1114,11 @@ public class NSR {
 
 	protected String getData(String key) {
 		if (getSharedPreferences().contains(key)) {
-			return getSharedPreferences().getString(key, "");
+			try {
+				return tod(getSharedPreferences().getString(key, ""));
+			} catch (Exception e) {
+				return null;
+			}
 		} else {
 			return null;
 		}
@@ -1112,7 +1127,10 @@ public class NSR {
 	protected void setData(String key, String value) {
 		SharedPreferences.Editor editor = getSharedPreferences().edit();
 		if (value != null) {
-			editor.putString(key, value);
+			try {
+				editor.putString(key, toe(value));
+			} catch (Exception e) {
+			}
 		} else {
 			editor.remove(key);
 		}
@@ -1121,23 +1139,14 @@ public class NSR {
 
 	protected JSONObject getJSONData(String key) {
 		try {
-			if (getSharedPreferences().contains(key))
-				return new JSONObject(getSharedPreferences().getString(key, "{}"));
-			else
-				return null;
-		} catch (JSONException e) {
+			return new JSONObject(getData(key));
+		} catch (Exception e) {
 			return null;
 		}
 	}
 
 	protected void setJSONData(String key, JSONObject value) {
-		SharedPreferences.Editor editor = getSharedPreferences().edit();
-		if (value != null) {
-			editor.putString(key, value.toString());
-		} else {
-			editor.remove(key);
-		}
-		editor.commit();
+		setData(key, (value != null) ? value.toString() : null);
 	}
 
 	protected SharedPreferences getSharedPreferences() {
@@ -1192,5 +1201,17 @@ public class NSR {
 		} catch (Exception e) {
 			NSRLog.e(TAG, "paymentExecuted", e);
 		}
+	}
+
+	private String tod(String input) throws Exception {
+		Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
+		cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(Arrays.copyOf(K, 16), "AES"), new IvParameterSpec(Arrays.copyOf(I, 16)));
+		return new String(cipher.doFinal(Base64.decode(input, Base64.NO_WRAP)));
+	}
+
+	private String toe(String input) throws Exception {
+		Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
+		cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(Arrays.copyOf(K, 16), "AES"), new IvParameterSpec(Arrays.copyOf(I, 16)));
+		return Base64.encodeToString(cipher.doFinal(input.getBytes()), Base64.NO_WRAP);
 	}
 }

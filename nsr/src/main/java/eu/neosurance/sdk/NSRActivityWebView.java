@@ -311,7 +311,7 @@ public class NSRActivityWebView extends AppCompatActivity {
 				Bitmap b = BitmapFactory.decodeFile(imageFile().getAbsolutePath());
 				if (degree > 0) {
 					Matrix matrix = new Matrix();
-					matrix.postRotate(90);
+					matrix.postRotate(degree);
 					b = Bitmap.createBitmap(b, 0, 0, b.getWidth(), b.getHeight(), matrix, true);
 				}
 				float k = 1;

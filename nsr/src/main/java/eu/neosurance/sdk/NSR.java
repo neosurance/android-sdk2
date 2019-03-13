@@ -51,7 +51,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class NSR {
 	protected String getVersion() {
-		return "2.2.8";
+		return "2.2.12";
 	}
 
 	protected String getOs() {
@@ -576,6 +576,9 @@ public class NSR {
 			if (!settings.has("push_icon")) {
 				settings.put("push_icon", R.drawable.nsr_logo);
 			}
+			if (settings.has("skin")) {
+				storeData("skin", settings.getJSONObject("skin"));
+			}
 			NSRLog.d(TAG, "setup: " + settings);
 			setSettings(settings);
 			if (getData("permission_requested") == null && getBoolean(settings, "ask_permission")) {
@@ -761,8 +764,7 @@ public class NSR {
 		if (gracefulDegradate()) {
 			return;
 		}
-		JSONObject conf = getConf();
-		if (getBoolean(conf, "local_tracking")) {
+		if (getBoolean(getConf(), "local_tracking")) {
 			NSRLog.d(NSR.TAG, "crunchEvent: " + event + " payload: " + payload.toString());
 			snapshot(event, payload);
 			localCrunchEvent(event, payload);
@@ -834,7 +836,9 @@ public class NSR {
 										if (pushes.length() > 0) {
 											JSONObject push = pushes.getJSONObject(0);
 											showPush(push);
-											localCrunchEvent("pushed", push);
+											if (getBoolean(getConf(), "local_tracking")) {
+												localCrunchEvent("pushed", push);
+											}
 										}
 									} else {
 										if (pushes.length() > 0) {
@@ -1093,11 +1097,9 @@ public class NSR {
 
 	protected synchronized JSONObject snapshot(final String event, final JSONObject payload) {
 		JSONObject snapshot = snapshot();
-		if (getBoolean(getConf(), "send_snapshot")) {
-			try {
-				snapshot.put(event, payload);
-			} catch (Exception e) {
-			}
+		try {
+			snapshot.put(event, payload);
+		} catch (Exception e) {
 		}
 		setJSONData("snapshot", snapshot);
 		return snapshot;
@@ -1201,6 +1203,14 @@ public class NSR {
 		} catch (Exception e) {
 			NSRLog.e(TAG, "paymentExecuted", e);
 		}
+	}
+
+	public void storeData(String key, JSONObject data) {
+		setJSONData("WV_" + key, data);
+	}
+
+	public JSONObject retrieveData(String key) {
+		return getJSONData("WV_" + key);
 	}
 
 	private String tod(String input) throws Exception {

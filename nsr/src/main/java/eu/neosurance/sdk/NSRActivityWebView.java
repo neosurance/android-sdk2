@@ -174,10 +174,14 @@ public class NSRActivityWebView extends AppCompatActivity {
 					}
 				}
 				if ("store".equals(what) && body.has("key") && body.has("data")) {
-					nsr.setJSONData(body.getString("key"), body.getJSONObject("data"));
+					nsr.storeData(body.getString("key"), body.getJSONObject("data"));
 				}
 				if ("retrive".equals(what) && body.has("key") && body.has("callBack")) {
-					JSONObject val = nsr.getJSONData(body.getString("key"));
+					JSONObject val = nsr.retrieveData(body.getString("key"));
+					eval(body.getString("callBack") + "(" + (val != null ? val.toString() : "null") + ")");
+				}
+				if ("retrieve".equals(what) && body.has("key") && body.has("callBack")) {
+					JSONObject val = nsr.retrieveData(body.getString("key"));
 					eval(body.getString("callBack") + "(" + (val != null ? val.toString() : "null") + ")");
 				}
 				if ("callApi".equals(what) && body.has("callBack")) {

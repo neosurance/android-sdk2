@@ -73,8 +73,8 @@ public class MainActivity extends AppCompatActivity {
 				if ("sendEvent".equals(what)) {
 					sendEvent();
 				}
-				if ("crunchEvent".equals(what)) {
-					crunchEvent();
+				if ("sendEvent2".equals(what)) {
+					sendEvent2();
 				}
 				if ("appLogin".equals(what)) {
 					appLogin();
@@ -105,7 +105,11 @@ public class MainActivity extends AppCompatActivity {
 			user.setCode(config.getProperty("user.code"));
 			user.setFirstname(config.getProperty("user.firstname"));
 			user.setLastname(config.getProperty("user.lastname"));
-
+			JSONObject locals = new JSONObject();
+			locals.put("firstname",config.getProperty("user.firstname"));
+			locals.put("lastname",config.getProperty("user.lastname"));
+			locals.put("email",config.getProperty("user.email"));
+			user.setLocals(locals);
 			NSR.getInstance(this).registerUser(user);
 		} catch (Exception e) {
 		}
@@ -119,26 +123,21 @@ public class MainActivity extends AppCompatActivity {
 	public void sendEvent() {
 		try {
 			Log.d(TAG, "sendEvent");
-			JSONObject payload = new JSONObject();
-			payload.put("iata", "LIN");
-			NSR.getInstance(this).sendEvent("inAirport", payload);
+			NSR.getInstance(this).sendEvent("ondemand", new JSONObject());
 		} catch (Exception e) {
 			Log.e(TAG, "sendEvent", e);
 		}
 	}
 
-	public void crunchEvent() {
+	public void sendEvent2() {
 		try {
-			Log.d(TAG, "crunchEvent");
-			JSONObject payload = new JSONObject();
-			payload.put("latitude", 51.16135787);
-			payload.put("longitude", -0.17700102);
-			;
-			NSR.getInstance(this).crunchEvent("position", payload);
+			Log.d(TAG, "sendEvent2");
+			NSR.getInstance(this).sendEvent("testpush", new JSONObject());
 		} catch (Exception e) {
-			Log.e(TAG, "crunchEvent", e);
+			Log.e(TAG, "sendEvent2", e);
 		}
 	}
+
 
 	public void showApp() {
 		Log.d(TAG, "showApp");

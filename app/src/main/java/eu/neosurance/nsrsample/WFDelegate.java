@@ -5,12 +5,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 
 import org.json.JSONObject;
 
 import eu.neosurance.sdk.NSRWorkflowDelegate;
 
 public class WFDelegate implements NSRWorkflowDelegate {
+	public final static String TAG = "NSRSample";
 
 	@Override
 	public boolean executeLogin(final Context ctx, final String url) {
@@ -27,6 +29,10 @@ public class WFDelegate implements NSRWorkflowDelegate {
 	@Override
 	public void confirmTransaction(Context ctx, JSONObject paymentInfo) {
 
+	}
+	@Override
+	public void keepAlive() {
+		Log.d(TAG, "keepAlive");
 	}
 
 	public static String getData(Context ctx, String key) {

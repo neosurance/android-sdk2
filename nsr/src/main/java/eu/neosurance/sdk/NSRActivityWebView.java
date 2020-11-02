@@ -264,6 +264,16 @@ public class NSRActivityWebView extends AppCompatActivity {
 						}
 					});
 				}
+				if (nsr.getWorkflowDelegate() != null && "keepAlive".equals(what)) {
+					new Handler(Looper.getMainLooper()).post(new Runnable() {
+						public void run() {
+							try {
+								nsr.getWorkflowDelegate().keepAlive();
+							} catch (Throwable e) {
+							}
+						}
+					});
+				}
 			}
 		} catch (Exception e) {
 			NSRLog.e(NSR.TAG, "postMessage", e);

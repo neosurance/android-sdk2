@@ -8,12 +8,15 @@ import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Properties;
 
 import eu.neosurance.sdk.NSR;
+import eu.neosurance.sdk.NSRLog;
+import eu.neosurance.sdk.NSRSecurityResponse;
 import eu.neosurance.sdk.NSRUser;
 
 public class MainActivity extends AppCompatActivity {
@@ -90,6 +93,23 @@ public class MainActivity extends AppCompatActivity {
 				}
 				if ("resetCruncher".equals(what)) {
 					NSR.getInstance(this).resetCruncher();
+				}
+				if ("closeView".equals(what)) {
+					NSR.getInstance(this).closeView();
+				}
+				if ("policies".equals(what)) {
+					JSONObject criteria = new JSONObject();
+					criteria.put("available",true);
+					NSR.getInstance(this).policies(criteria, new NSRSecurityResponse() {
+						public void completionHandler(JSONObject json, String error) throws Exception {
+							if (error == null) {
+								NSRLog.d(TAG, "policies response");
+								NSRLog.d(TAG, json.toString());
+							} else {
+								NSRLog.e(TAG, "policies error: " + error);
+							}
+						}
+					});
 				}
 			}
 		} catch (Exception e) {

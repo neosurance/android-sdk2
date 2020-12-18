@@ -51,7 +51,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class NSR {
 	protected String getVersion() {
-		return "2.2.12";
+		return "2.3.1";
 	}
 
 	protected String getOs() {
@@ -860,6 +860,36 @@ public class NSR {
 		}
 	}
 
+	public void policies(final JSONObject criteria, final NSRSecurityResponse responseHandler) {
+		if (gracefulDegradate()) {
+			return;
+		}
+		NSRLog.d(TAG, "policies - criteria: " + criteria);
+		try {
+			authorize(new NSRAuth() {
+				public void authorized(boolean authorized) throws Exception {
+					if (!authorized) {
+						return;
+					}
+					JSONObject requestPayload = new JSONObject();
+					requestPayload.put("criteria", criteria);
+
+					JSONObject headers = new JSONObject();
+					String token = getToken();
+					NSRLog.d(TAG, "sendEvent token: " + token);
+					headers.put("ns_token", token);
+					headers.put("ns_lang", getLang());
+
+					NSRLog.d(TAG, "requestPayload: " + requestPayload.toString());
+
+					getSecurityDelegate().secureRequest(ctx, "policies", requestPayload, headers, responseHandler);
+				}
+			});
+		} catch (Exception e) {
+			NSRLog.e(TAG, "policies", e);
+		}
+	}
+
 	public void archiveEvent(final String event, final JSONObject payload) {
 		if (gracefulDegradate()) {
 			return;
@@ -946,6 +976,18 @@ public class NSR {
 			}
 		} catch (Exception e) {
 			NSRLog.e(TAG, "showUrl", e);
+		}
+	}
+
+	public void closeView() {
+		if (gracefulDegradate()) {
+			return;
+		}
+		try {
+			if (activityWebView != null)
+				activityWebView.finish();
+		} catch (Exception e) {
+			NSRLog.e(TAG, "closeView", e);
 		}
 	}
 

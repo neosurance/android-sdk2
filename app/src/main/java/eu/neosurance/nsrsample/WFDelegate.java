@@ -35,6 +35,11 @@ public class WFDelegate implements NSRWorkflowDelegate {
 		Log.d(TAG, "keepAlive");
 	}
 
+	@Override
+	public void goTo(final Context ctx, final String area) {
+		Log.d(TAG, "goTo: " + area);
+	}
+
 	public static String getData(Context ctx, String key) {
 		SharedPreferences sp = ctx.getSharedPreferences("NSRSample", Application.MODE_PRIVATE);
 		if (sp.contains(key)) {

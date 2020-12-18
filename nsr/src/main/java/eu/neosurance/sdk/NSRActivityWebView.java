@@ -274,6 +274,16 @@ public class NSRActivityWebView extends AppCompatActivity {
 						}
 					});
 				}
+				if (nsr.getWorkflowDelegate() != null && "goTo".equals(what) && body.has("area")) {
+					new Handler(Looper.getMainLooper()).post(new Runnable() {
+						public void run() {
+							try {
+								nsr.getWorkflowDelegate().goTo(getApplicationContext(),body.getString("area"));
+							} catch (Throwable e) {
+							}
+						}
+					});
+				}
 			}
 		} catch (Exception e) {
 			NSRLog.e(NSR.TAG, "postMessage", e);

@@ -125,11 +125,18 @@ public class MainActivity extends AppCompatActivity {
 			user.setCode(config.getProperty("user.code"));
 			user.setFirstname(config.getProperty("user.firstname"));
 			user.setLastname(config.getProperty("user.lastname"));
+
+			user.setAddress(config.getProperty("user.address"));
+			user.setZipCode(config.getProperty("user.cap"));
+			user.setCity(config.getProperty("user.city"));
+			user.setStateProvince(config.getProperty("user.province"));
+			user.setFiscalCode(config.getProperty("user.fiscalcode"));
+
 			JSONObject locals = new JSONObject();
 			locals.put("firstname",config.getProperty("user.firstname"));
 			locals.put("lastname",config.getProperty("user.lastname"));
 			locals.put("email",config.getProperty("user.email"));
-			user.setLocals(locals);
+			//user.setLocals(locals);
 			NSR.getInstance(this).registerUser(user);
 		} catch (Exception e) {
 		}
@@ -152,7 +159,7 @@ public class MainActivity extends AppCompatActivity {
 	public void sendEvent2() {
 		try {
 			Log.d(TAG, "sendEvent2");
-			NSR.getInstance(this).sendEvent("testpush", new JSONObject());
+			NSR.getInstance(this).sendEvent("inpoi", new JSONObject()); //testpush
 		} catch (Exception e) {
 			Log.e(TAG, "sendEvent2", e);
 		}

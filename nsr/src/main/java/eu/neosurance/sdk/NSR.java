@@ -51,7 +51,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class NSR {
 	protected String getVersion() {
-		return "2.3.1";
+		return "2.3.3";
 	}
 
 	protected String getOs() {
@@ -115,6 +115,8 @@ public class NSR {
 		if (instance == null) {
 			NSRLog.d(TAG, "making instance...");
 			instance = new NSR(ctx);
+			if(ctx == null)
+				return instance;
 			if (!gracefulDegradate()) {
 				try {
 					String s = instance.getData("securityDelegateClass");
@@ -531,7 +533,7 @@ public class NSR {
 	}
 
 	public void setSecurityDelegate(NSRSecurityDelegate securityDelegate) {
-		if (gracefulDegradate()) {
+		if (ctx == null || gracefulDegradate()) {
 			return;
 		}
 		setData("securityDelegateClass", securityDelegate.getClass().getName());
@@ -543,7 +545,7 @@ public class NSR {
 	}
 
 	public void setWorkflowDelegate(NSRWorkflowDelegate workflowDelegate) {
-		if (gracefulDegradate()) {
+		if (ctx == null || gracefulDegradate()) {
 			return;
 		}
 		setData("workflowDelegateClass", workflowDelegate.getClass().getName());
@@ -555,7 +557,7 @@ public class NSR {
 	}
 
 	public void setPushDelegate(NSRPushDelegate pushDelegate) {
-		if (gracefulDegradate()) {
+		if (ctx == null || gracefulDegradate()) {
 			return;
 		}
 		setData("pushDelegateClass", pushDelegate.getClass().getName());
@@ -564,7 +566,7 @@ public class NSR {
 
 
 	public void setup(final JSONObject settings) {
-		if (gracefulDegradate()) {
+		if (ctx == null || gracefulDegradate()) {
 			return;
 		}
 		NSRLog.enabled = !getBoolean(settings, "disable_log");
@@ -600,7 +602,7 @@ public class NSR {
 	}
 
 	public void registerUser(NSRUser user) {
-		if (gracefulDegradate()) {
+		if (ctx == null || gracefulDegradate()) {
 			return;
 		}
 		NSRLog.d(TAG, "registerUser");
@@ -654,7 +656,7 @@ public class NSR {
 	}
 
 	public void forgetUser() {
-		if (gracefulDegradate()) {
+		if (ctx == null || gracefulDegradate()) {
 			return;
 		}
 		NSRLog.d(TAG, "forgetUser");
@@ -723,7 +725,7 @@ public class NSR {
 	}
 
 	public void sendAction(final String name, final String policyCode, final String details) {
-		if (gracefulDegradate()) {
+		if (ctx == null || gracefulDegradate()) {
 			return;
 		}
 		NSRLog.d(TAG, "sendAction - name: " + name + " policyCode: " + policyCode + " details: " + details);
@@ -761,7 +763,7 @@ public class NSR {
 	}
 
 	public void crunchEvent(final String event, final JSONObject payload) {
-		if (gracefulDegradate()) {
+		if (ctx == null || gracefulDegradate()) {
 			return;
 		}
 		if (getBoolean(getConf(), "local_tracking")) {
@@ -783,7 +785,7 @@ public class NSR {
 	}
 
 	public void sendEvent(final String event, final JSONObject payload) {
-		if (gracefulDegradate()) {
+		if (ctx == null || gracefulDegradate()) {
 			return;
 		}
 		NSRLog.d(TAG, "sendEvent - event: " + event + " payload: " + payload);
@@ -861,7 +863,7 @@ public class NSR {
 	}
 
 	public void policies(final JSONObject criteria, final NSRSecurityResponse responseHandler) {
-		if (gracefulDegradate()) {
+		if (ctx == null || gracefulDegradate()) {
 			return;
 		}
 		NSRLog.d(TAG, "policies - criteria: " + criteria);
@@ -891,7 +893,7 @@ public class NSR {
 	}
 
 	public void archiveEvent(final String event, final JSONObject payload) {
-		if (gracefulDegradate()) {
+		if (ctx == null || gracefulDegradate()) {
 			return;
 		}
 		NSRLog.d(TAG, "archiveEvent - event: " + event + " payload: " + payload);
@@ -958,7 +960,7 @@ public class NSR {
 	}
 
 	public synchronized void showUrl(String url, JSONObject params) {
-		if (gracefulDegradate()) {
+		if (ctx == null || gracefulDegradate()) {
 			return;
 		}
 		try {
@@ -1023,7 +1025,7 @@ public class NSR {
 	}
 
 	protected void showPush(JSONObject push) {
-		if (NSR.gracefulDegradate()) {
+		if (ctx == null || gracefulDegradate()) {
 			return;
 		}
 		try {
@@ -1222,7 +1224,7 @@ public class NSR {
 	}
 
 	public void loginExecuted(String url) {
-		if (gracefulDegradate()) {
+		if (ctx == null || gracefulDegradate()) {
 			return;
 		}
 		try {
@@ -1235,7 +1237,7 @@ public class NSR {
 	}
 
 	public void paymentExecuted(JSONObject paymentInfo, String url) {
-		if (gracefulDegradate()) {
+		if (ctx == null || gracefulDegradate()) {
 			return;
 		}
 		try {

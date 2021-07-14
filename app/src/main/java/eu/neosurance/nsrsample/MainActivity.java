@@ -136,7 +136,8 @@ public class MainActivity extends AppCompatActivity {
 			locals.put("firstname",config.getProperty("user.firstname"));
 			locals.put("lastname",config.getProperty("user.lastname"));
 			locals.put("email",config.getProperty("user.email"));
-			//user.setLocals(locals);
+			user.setLocals(locals);
+			
 			NSR.getInstance(this).registerUser(user);
 		} catch (Exception e) {
 		}

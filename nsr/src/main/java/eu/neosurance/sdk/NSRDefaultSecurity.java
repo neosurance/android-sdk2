@@ -3,7 +3,7 @@ package eu.neosurance.sdk;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Build;
-import android.support.annotation.RequiresApi;
+import androidx.annotation.RequiresApi;
 
 import org.json.JSONObject;
 

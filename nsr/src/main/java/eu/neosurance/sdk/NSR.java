@@ -20,9 +20,9 @@ import android.os.BatteryManager;
 import android.os.Build;
 import android.os.SystemClock;
 import android.provider.Settings;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.NotificationManagerCompat;
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import android.util.Base64;
 
 import com.google.android.gms.location.ActivityRecognition;
@@ -51,7 +51,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class NSR {
 	protected String getVersion() {
-		return "2.3.3";
+		return "2.3.4";
 	}
 
 	protected String getOs() {

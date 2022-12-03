@@ -3,12 +3,11 @@ package eu.neosurance.nsrsample;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -123,19 +122,18 @@ public class MainActivity extends AppCompatActivity {
 			NSRUser user = new NSRUser();
 			user.setEmail(config.getProperty("user.email"));
 			user.setCode(config.getProperty("user.code"));
-			user.setFirstname(config.getProperty("user.firstname"));
-			user.setLastname(config.getProperty("user.lastname"));
-
-			user.setAddress(config.getProperty("user.address"));
-			user.setZipCode(config.getProperty("user.cap"));
-			user.setCity(config.getProperty("user.city"));
-			user.setStateProvince(config.getProperty("user.province"));
-			user.setFiscalCode(config.getProperty("user.fiscalcode"));
 
 			JSONObject locals = new JSONObject();
 			locals.put("firstname",config.getProperty("user.firstname"));
 			locals.put("lastname",config.getProperty("user.lastname"));
 			locals.put("email",config.getProperty("user.email"));
+
+			locals.put("address",config.getProperty("user.address"));
+			locals.put("zipCode",config.getProperty("user.zipCode"));
+			locals.put("fiscalCode",config.getProperty("user.fiscalCode"));
+			locals.put("city",config.getProperty("user.city"));
+			locals.put("stateProvince",config.getProperty("user.stateProvince"));
+
 			user.setLocals(locals);
 			
 			NSR.getInstance(this).registerUser(user);
@@ -184,6 +182,7 @@ public class MainActivity extends AppCompatActivity {
 			settings.put("push_icon", R.drawable.king);
 			settings.put("ask_permission", 1);
 			settings.put("dev_mode", 1);
+			settings.put("ns_lang", "it");
 			NSR.getInstance(this).setWorkflowDelegate(new WFDelegate());
 			//NSR.getInstance(this).setPushDelegate(new PushDelegate());
 			NSR.getInstance(this).setup(settings);

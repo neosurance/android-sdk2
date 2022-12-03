@@ -5,12 +5,12 @@ android {
 
 	defaultConfig {
 		minSdkVersion 16
-		versionCode 232
-		versionName "2.3.3"
+		versionCode 234
+		versionName "2.3.4"
 	}
 }
 
 dependencies {
-	implementation 'com.android.support:appcompat-v7:26.1.0'
+	implementation 'androidx.appcompat:appcompat:1.0.0'
 	implementation 'com.google.android.gms:play-services-location:15.0.1'
 }

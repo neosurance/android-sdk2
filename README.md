@@ -4,7 +4,7 @@
 - Exchanges info with the AI engines
 - Sends the push notification
 - Displays a landing page
-- Displays the list of the purchased policies
+- Displays the list of the purchased policies...
 
 ## Example
 
